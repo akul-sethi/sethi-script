@@ -1,0 +1,1 @@
+# sethi-script
