@@ -1,0 +1,46 @@
+#ifndef sethi_chunk_h
+#define sethi_chunk_h
+
+#include "common.h"
+#include "memory.h"
+#include "value.h"
+
+typedef enum {
+    OP_CONSTANT,
+    OP_RETURN,
+    OP_NEGATE,
+    OP_MUL,
+    OP_DIVIDE,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_TRUE,
+    OP_FALSE,
+    OP_NIL,
+    OP_EQUALITY,
+    OP_LESS,
+    OP_GREATER,
+    OP_GREATER_EQUAL,
+    OP_LESS_EQUAL,
+    OP_FALSIFY,
+    OP_PRINT,
+    OP_POP
+} OpCode;
+
+typedef struct {
+    int32_t count;
+    int32_t capacity;
+    uint8_t* code;
+    int* lines;
+    ValueArray constants;
+} Chunk;
+
+
+
+void initChunk(Chunk* chunk);
+void writeChunk(Chunk* chunk, uint8_t byte, int line);
+void freeChunk(Chunk*);
+int addConstant(Chunk* chunk, Value val);
+// void pickle(Chunk* chunk, const char* path);
+// Chunk* unpickle(Chunk* chunk, const char* path);
+
+#endif

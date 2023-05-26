@@ -1,0 +1,30 @@
+{
+    "files.associations": {
+        "__bit_reference": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "array": "cpp",
+        "iterator": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "system_error": "c",
+        "memory.h": "c",
+        "value.h": "c",
+        "variant": "c",
+        "chrono": "c",
+        "__node_handle": "c",
+        "atomic": "c",
+        "bitset": "c",
+        "__memory": "c",
+        "limits": "c",
+        "locale": "c",
+        "optional": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "cstddef": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}
