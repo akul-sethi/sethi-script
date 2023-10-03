@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vm.h"
+#include "debug.h"
 
 typedef struct {
     Token previous;
@@ -90,6 +91,13 @@ static void constant() {
 
 }
 
+static bool match(TokenType type) {
+    if(parser.current.type == type) {
+        advance();
+        return true;
+    }
+    return false;
+}
 
 static void grouping() {
    expression();
@@ -156,6 +164,17 @@ static void string() {
     emitBytes(OP_CONSTANT, index, line);
 }
 
+static void variable() {
+    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)makeObjString(parser.previous.start,
+    parser.previous.length)});
+    if(match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(OP_SET_GLOB, index, parser.previous.line);
+    } else {
+        emitBytes(OP_GET_GLOB, index, parser.previous.line);
+    }
+}
+
  ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -176,7 +195,7 @@ static void string() {
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_EQUAL_EQUAL] = {NULL, binary, PREC_EQUALITY},
-    [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IDENTIFIER] = {variable, NULL, PREC_PRIMARY},
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {constant, NULL, PREC_PRIMARY},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
@@ -217,13 +236,7 @@ ParseRule* getRule(TokenType type) {
 
 }
 
-static bool match(TokenType type) {
-    if(parser.current.type == type) {
-        advance();
-        return true;
-    }
-    return false;
-}
+
 
 static void printStatement() {
     expression();
@@ -236,7 +249,16 @@ static void expressionStatement() {
 }
 
 static void declaration() {
+    consume(TOKEN_IDENTIFIER, "Expect identifier");
+    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) makeObjString(parser.previous.start, parser.previous.length)});
 
+    if(match(TOKEN_EQUAL)) {
+        expression();
+    } else {
+        emitByte(OP_NIL, parser.current.line);
+    }
+
+    emitBytes(OP_DEFINE_GLOB, index, parser.current.line);
 }
 
 
@@ -246,7 +268,7 @@ static void statement() {
         printStatement();
     } else if(match(TOKEN_VAR)) {
         declaration();
-    }
+    }       
     else {
        expressionStatement();
     }

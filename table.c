@@ -4,7 +4,7 @@
 
 void initTable(Table* table) {
     table->count = 0;
-    table->capacity = 0;
+    table->capacity = 10;
     table->entries = NULL;
 }
 
@@ -23,19 +23,33 @@ static bool sameString(ObjString* key1, ObjString* key2) {
     return strcmp(key1->string, key2->string) == 0;
 }
 
+// static void grow(Table* table) {
+//     int oldCapacity = table->capacity;
+//     Entry* oldEntries = table->entries;
+//     table->capacity = GROW_CAPACITY(table->capacity);
+//     table->entries = (Entry*) realloc(table->entries, table->capacity);
+   
+//    for(int i = 0; i < oldCapacity; i++) {
+//       if(!oldEntries[i].isEmpty) {
+//         put(table, oldEntries[i].key, oldEntries[i].value);
+//       }
+//    } 
+// }
+
+void putIntoEntries() {
+
+}
 void put(Table* table, ObjString* key, Value val) {
-    if(table->capacity == 0 || table->count / table->capacity > LOAD_FACTOR) {
-        int oldCapacity = table->capacity;
-        table->capacity = GROW_CAPACITY(table->capacity);
-        table->entries = GROW_ARRAY(Entry, table->entries, oldCapacity, table->capacity);
-    }
+    // if(table->capacity == 0 || table->count / table->capacity > LOAD_FACTOR) {
+    //    grow(table);
+    // }
 
     int hashVal = hash(key);
 
     for(int i = 0; i < table->capacity; i++) {
         int index = (hashVal + i) % table->capacity;
-        if(table->entries[index].key == NULL || sameString(key, table->entries[index].key)) {
-            table->entries[index] = (Entry){.key = key, .value = val};
+        if(table->entries[index].isEmpty || sameString(key, table->entries[index].key)) {
+            table->entries[index] = (Entry){.key = key, .value = val, .isEmpty = false};
             return;
         }
     }

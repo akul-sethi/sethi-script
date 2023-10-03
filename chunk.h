@@ -23,7 +23,10 @@ typedef enum {
     OP_LESS_EQUAL,
     OP_FALSIFY,
     OP_PRINT,
-    OP_POP
+    OP_POP,
+    OP_DEFINE_GLOB,
+    OP_SET_GLOB,
+    OP_GET_GLOB
 } OpCode;
 
 typedef struct {

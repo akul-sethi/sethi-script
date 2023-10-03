@@ -7,6 +7,7 @@
 #include "string.h"
 #include <stdlib.h>
 
+
 VM vm;
 
 static void resetStack() {
@@ -15,6 +16,7 @@ static void resetStack() {
 
 void initVM() {
     resetStack();
+    initTable(&vm.table);
     vm.objects = NULL;
 }
 
@@ -94,7 +96,7 @@ static InterpretResult run() {
                 printf("]");
             }
             printf("\n");
-            dissasembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
+            dissasembleInstruction(vm.chunk,(int)(vm.ip - vm.chunk->code));
         #endif
         uint8_t instruction = READ_BYTE();
         switch (instruction)
@@ -160,10 +162,27 @@ static InterpretResult run() {
             push(MAKE_BOOL((!pop().as.boolean)));
             break;
         case OP_PRINT:
-            printValue(pop());
             printf("\n");
+            printValue(pop());
             break;
         case OP_POP: pop(); break;
+        case OP_DEFINE_GLOB: {
+            put(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            pop();
+        } 
+        case OP_SET_GLOB: {
+            put(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            pop();
+        }
+        case OP_GET_GLOB: {
+            Value* val = get(&vm.table, (ObjString*)READ_CONSTANT().as.obj);
+            if(val == NULL) {
+                push(MAKE_NIL());
+            } else {
+                push(*val);
+            }
+        }
+
         default:
             return INTERPRET_RUNTIME_ERROR;
         }
@@ -210,6 +229,7 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
+    dissasembleChunk(&chunk, "Test");
     InterpretResult result = run();
     freeObjects();
     freeChunk(&chunk);

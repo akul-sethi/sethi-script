@@ -6,6 +6,7 @@
 typedef struct {
     ObjString* key;
     Value value;
+    bool isEmpty;
 } Entry;
 
 typedef struct {
