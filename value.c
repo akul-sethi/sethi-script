@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "memory.h"
 #include "value.h"
 
@@ -43,3 +44,27 @@ void printValue(Value val) {
 bool isObjectOfType(Value val, ObjType type) {
     return IS_OBJ(val) && val.as.obj->type == type;
 }
+
+static uint32_t hash(const char* string, int length) {
+    uint32_t hash = 2166136261u;
+    
+    for(int i = 0; i < length; i++) {
+        hash ^= (uint32_t)string[i];
+        hash *= 16777619;
+    }
+
+    return hash;
+}
+
+ObjString* copyString(const char* string, int length) {
+    char* heapPtr = (char*) malloc(length);
+    strcpy(heapPtr, string);
+    ObjString* heapObj = (ObjString*) malloc(sizeof(ObjString));
+    ((Obj*)heapObj)->type = OBJ_STRING;
+    heapObj->length = length;
+    heapObj->string = heapPtr;
+    heapObj->hash = hash(string, length);
+        return heapObj;
+ }
+
+

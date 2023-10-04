@@ -1,23 +1,22 @@
-#ifndef sethi_table_h
-#define sethi_table_h
-#define LOAD_FACTOR 0.5
+#ifndef clox_table_h
+#define clox_table_h
+
+#include "common.h"
 #include "value.h"
 
 typedef struct {
-    ObjString* key;
-    Value value;
-    bool isEmpty;
+  ObjString* key;
+  Value value;
 } Entry;
 
 typedef struct {
-    int capacity;
-    int count;
-    Entry* entries;
+  int count;
+  int capacity;
+  Entry* entries;
 } Table;
 
 void initTable(Table* table);
-void put(Table* table, ObjString* key, Value value);
-Value* get(Table* table, ObjString* key);
-
+Value get(Table* table, ObjString* key);
+void set(Table* table, ObjString* key, Value value)
 
 #endif

@@ -25,6 +25,7 @@ typedef struct {
     Obj obj;
     int length;
     const char* string;
+    u_int32_t hash;
 } ObjString;
 
 typedef struct {
@@ -47,6 +48,8 @@ void writeValueArray(ValueArray* arr, Value val);
 void freeValueArray(ValueArray* arr);
 void printValue(Value val);
 bool isObjectOfType(Value val, ObjType type);
+ObjString* copyString(const char* string, int length);
+
 
 #define IS_NIL(value) (value.type==VALUE_NIL)
 #define IS_BOOL(value) (value.type==VALUE_BOOL)
