@@ -30,7 +30,7 @@ bool compile(const char* source, Chunk* chunk);
 void parsePrecedence(Precedence precedence);
 void expression();
 ParseRule* getRule(TokenType type);
-ObjString* makeObjString(const char* start, int length);
+// ObjString* makeObjString(const char* start, int length);
 
 
 #endif

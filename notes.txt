@@ -1,0 +1,8 @@
+ObjString gets allocated to heap
+stores its own hash
+Hashmap has an array gets scaled every time 
+
+
+
+TODO:
+check if strings are freed from memory

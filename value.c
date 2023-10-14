@@ -3,6 +3,8 @@
 #include <string.h>
 #include "memory.h"
 #include "value.h"
+#include "table.h"
+#include "vm.h"
 
 
 void initValueArray(ValueArray* arr) {
@@ -45,7 +47,7 @@ bool isObjectOfType(Value val, ObjType type) {
     return IS_OBJ(val) && val.as.obj->type == type;
 }
 
-static uint32_t hash(const char* string, int length) {
+ uint32_t hash(const char* string, int length) {
     uint32_t hash = 2166136261u;
     
     for(int i = 0; i < length; i++) {
@@ -57,14 +59,23 @@ static uint32_t hash(const char* string, int length) {
 }
 
 ObjString* copyString(const char* string, int length) {
-    char* heapPtr = (char*) malloc(length);
+    uint32_t hashVal = hash(string, length);
+    ObjString* intern = findStringInTable(&vm.strings, string, length, hashVal);
+    if(intern != NULL) {return intern;} 
+        
+    char* heapPtr = (char*) malloc(length + 1);
     strcpy(heapPtr, string);
+    heapPtr[length] = '\0';
     ObjString* heapObj = (ObjString*) malloc(sizeof(ObjString));
     ((Obj*)heapObj)->type = OBJ_STRING;
+    ((Obj*)heapObj)->next = vm.objects;
+    vm.objects = &heapObj->obj;
     heapObj->length = length;
     heapObj->string = heapPtr;
-    heapObj->hash = hash(string, length);
-        return heapObj;
+    heapObj->hash = hashVal;
+    set(&vm.strings, heapObj, MAKE_NIL());
+    return heapObj;
  }
+
 
 

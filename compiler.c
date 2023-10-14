@@ -18,7 +18,6 @@ typedef struct {
 Parser parser;
 Chunk* compilingChunk;
 
-
 static void advance() {
     parser.previous = parser.current;
     parser.current = scanToken();
@@ -140,32 +139,32 @@ static void binary() {
     default: break;
     }
 }
- ObjString* makeObjString(const char* start, int length) {
-    char* heapString = (char*) malloc(length  + 1);
-    memcpy(heapString, start, length);
-    heapString[length] = '\0';
+//  ObjString* makeObjString(const char* start, int length) {
+//     char* heapString = (char*) malloc(length  + 1);
+//     memcpy(heapString, start, length);
+//     heapString[length] = '\0';
 
-    ObjString* objString = (ObjString*) malloc(sizeof(ObjString));
-    objString->obj.type = OBJ_STRING;
-    objString->obj.next = vm.objects;
-    objString->length = length;
-    objString->string = heapString;
+//     ObjString* objString = (ObjString*) malloc(sizeof(ObjString));
+//     objString->obj.type = OBJ_STRING;
+//     objString->obj.next = vm.objects;
+//     objString->length = length;
+//     objString->string = heapString;
 
     
-    vm.objects = &objString->obj;
+//     vm.objects = &objString->obj;
 
-    return objString;
-}
+//     return objString;
+// }
 static void string() {
     int line = parser.previous.line;
-    Value val = {.type = VALUE_OBJ, .as.obj = (Obj*)makeObjString(parser.previous.start + 1,
+    Value val = {.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start + 1,
     parser.previous.length - 2)};
     int index = addConstant(compilingChunk, val);
     emitBytes(OP_CONSTANT, index, line);
 }
 
 static void variable() {
-    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)makeObjString(parser.previous.start,
+    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start,
     parser.previous.length)});
     if(match(TOKEN_EQUAL)) {
         expression();
@@ -250,7 +249,7 @@ static void expressionStatement() {
 
 static void declaration() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
-    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) makeObjString(parser.previous.start, parser.previous.length)});
+    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
 
     if(match(TOKEN_EQUAL)) {
         expression();

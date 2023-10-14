@@ -17,6 +17,7 @@ static void resetStack() {
 void initVM() {
     resetStack();
     initTable(&vm.table);
+    initTable(&vm.strings);
     vm.objects = NULL;
 }
 
@@ -58,7 +59,7 @@ bool sameObject(Value a, Value b) {
     case OBJ_STRING:  {
         ObjString* objStringA = (ObjString*) aObj;
         ObjString* objStringB = (ObjString*) bObj;
-        return strcmp(objStringA->string, objStringB->string) == 0;
+        return objStringA == objStringB;
     }
     default: return false; 
     }
@@ -88,16 +89,16 @@ static InterpretResult run() {
         } while(false);
 
     for(;;) {
-        #ifdef DEBUG_TRACE_EXECUTION
-            printf("        ");
-            for(Value* slot = vm.stack; slot < vm.stackTop; slot++) {
-                printf("[");
-                printValue(*slot);
-                printf("]");
-            }
-            printf("\n");
-            dissasembleInstruction(vm.chunk,(int)(vm.ip - vm.chunk->code));
-        #endif
+        // #ifdef DEBUG_TRACE_EXECUTION
+        //     printf("        ");
+        //     for(Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+        //         printf("[");
+        //         printValue(*slot);
+        //         printf("]");
+        //     }
+        //     printf("\n");
+        //     dissasembleInstruction(vm.chunk,(int)(vm.ip - vm.chunk->code));
+        // #endif
         uint8_t instruction = READ_BYTE();
         switch (instruction)
         {
@@ -122,7 +123,7 @@ static InterpretResult run() {
                 char* output = (char*) malloc(a->length + b->length);
                 strcpy(output, a->string);
                 strcat(output, b->string);
-                ObjString* objString = makeObjString(output, a->length + b->length);
+                ObjString* objString = copyString(output, a->length + b->length);
                 free(output);
                 push(MAKE_OBJ((Obj*) objString));
             } else {
@@ -167,11 +168,13 @@ static InterpretResult run() {
             break;
         case OP_POP: pop(); break;
         case OP_DEFINE_GLOB: {
-            put(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            printValue(peek(0));
+            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
             pop();
         } 
         case OP_SET_GLOB: {
-            put(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            printValue(peek(0));
+            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
             pop();
         }
         case OP_GET_GLOB: {
@@ -233,6 +236,7 @@ InterpretResult interpret(const char* source) {
     InterpretResult result = run();
     freeObjects();
     freeChunk(&chunk);
+    freeTable(&vm.strings);
     return result;
 }
 

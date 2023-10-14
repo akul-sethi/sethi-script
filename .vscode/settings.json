@@ -24,7 +24,8 @@
         "ratio": "c",
         "tuple": "c",
         "type_traits": "c",
-        "cstddef": "c"
+        "cstddef": "c",
+        "__locale": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
