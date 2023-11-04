@@ -168,14 +168,18 @@ static InterpretResult run() {
             break;
         case OP_POP: pop(); break;
         case OP_DEFINE_GLOB: {
-            printValue(peek(0));
-            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            ObjString* s = (ObjString*)READ_CONSTANT().as.obj;
+            set(&vm.table, s, peek(1));
+            printValue(*get(&vm.table, s));
+            printf("\n");
+            printValue(*get(&vm.table, copyString("x", 1)));
             pop();
+            break;
         } 
         case OP_SET_GLOB: {
-            printValue(peek(0));
-            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(0));
+            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(1));
             pop();
+            break;
         }
         case OP_GET_GLOB: {
             Value* val = get(&vm.table, (ObjString*)READ_CONSTANT().as.obj);
@@ -184,6 +188,7 @@ static InterpretResult run() {
             } else {
                 push(*val);
             }
+             break;
         }
 
         default:
@@ -222,7 +227,6 @@ static void freeObjects() {
 InterpretResult interpret(const char* source) { 
     Chunk chunk;
     initChunk(&chunk);
-
     if(!compile(source, &chunk)) {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
@@ -238,5 +242,6 @@ InterpretResult interpret(const char* source) {
     freeChunk(&chunk);
     freeTable(&vm.strings);
     return result;
+
 }
 

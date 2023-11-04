@@ -6,3 +6,5 @@ Hashmap has an array gets scaled every time
 
 TODO:
 check if strings are freed from memory
+Fix table grow
+Fix copy string

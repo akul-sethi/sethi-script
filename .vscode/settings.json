@@ -25,7 +25,8 @@
         "tuple": "c",
         "type_traits": "c",
         "cstddef": "c",
-        "__locale": "c"
+        "__locale": "c",
+        "iosfwd": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

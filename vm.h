@@ -13,7 +13,9 @@ typedef struct {
     Value stack[STACK_MAX];
     Value* stackTop;
     Obj* objects;
+    //All interned strings
     Table strings;
+    //All global vars
     Table table;
 } VM;
 
@@ -30,5 +32,7 @@ void initVM();
 void freeVM();
 void push(Value val);
 Value pop();
+
+
 
 #endif

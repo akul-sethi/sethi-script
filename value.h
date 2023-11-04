@@ -24,7 +24,7 @@ typedef struct Obj Obj;
 typedef struct {
     Obj obj;
     int length;
-    const char* string;
+    char* string;
     u_int32_t hash;
 } ObjString;
 
@@ -61,6 +61,7 @@ uint32_t hash(const char* string, int length);
 #define MAKE_BOOL(bool) ((Value){.type = VALUE_BOOL, .as.boolean = bool})
 #define MAKE_NUM(value) ((Value){.type = VALUE_NUM, .as.number = value})
 #define MAKE_NIL() ((Value){.type = VALUE_NIL})
+//Makes a Value of type VALUE_OBJ given the pointer of the Obj
 #define MAKE_OBJ(ptr) ((Value) {.type = VALUE_OBJ, .as.obj = ptr})
 
 

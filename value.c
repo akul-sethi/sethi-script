@@ -31,9 +31,18 @@ void freeValueArray(ValueArray* arr) {
 
 void printValue(Value val) {
     switch(val.type) {
-        case VALUE_BOOL: printf("%s", val.as.boolean ? "true" : "false"); break;
-        case VALUE_NIL: printf("nil"); break;
-        case VALUE_NUM: printf("%d", val.as.number); break;
+        case VALUE_BOOL: {
+            printf("%s", val.as.boolean ? "true" : "false"); 
+            break;
+        }
+        case VALUE_NIL: {
+            printf("nil"); 
+            break;
+        }
+        case VALUE_NUM: {
+            printf("%d", val.as.number); 
+            break;
+        }
         case VALUE_OBJ: 
             if(val.as.obj->type == OBJ_STRING) {
                 printf("%s", ((ObjString*) val.as.obj)->string);
@@ -58,22 +67,31 @@ bool isObjectOfType(Value val, ObjType type) {
     return hash;
 }
 
+//Checks if string exists in intern table, otherwise creates string in heap, creates objstring, and adds it to table
 ObjString* copyString(const char* string, int length) {
     uint32_t hashVal = hash(string, length);
     ObjString* intern = findStringInTable(&vm.strings, string, length, hashVal);
     if(intern != NULL) {return intern;} 
         
-    char* heapPtr = (char*) malloc(length + 1);
-    strcpy(heapPtr, string);
+    char* heapPtr = (char*) malloc(sizeof(char) * (length + 1));
+    if(heapPtr == NULL) {
+        exit(1);
+     
+    }
+    memcpy(heapPtr, string, length);
     heapPtr[length] = '\0';
     ObjString* heapObj = (ObjString*) malloc(sizeof(ObjString));
+      if(heapObj == NULL) {
+        exit(1);
+    }
     ((Obj*)heapObj)->type = OBJ_STRING;
     ((Obj*)heapObj)->next = vm.objects;
     vm.objects = &heapObj->obj;
     heapObj->length = length;
     heapObj->string = heapPtr;
     heapObj->hash = hashVal;
-    set(&vm.strings, heapObj, MAKE_NIL());
+    set(&vm.strings, heapObj, MAKE_BOOL(true));
+
     return heapObj;
  }
 

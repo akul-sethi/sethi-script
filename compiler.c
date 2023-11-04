@@ -18,6 +18,7 @@ typedef struct {
 Parser parser;
 Chunk* compilingChunk;
 
+//Moves the parser down one;
 static void advance() {
     parser.previous = parser.current;
     parser.current = scanToken();
@@ -90,6 +91,7 @@ static void constant() {
 
 }
 
+//Checks if the current token is the given, and advances the parser.
 static bool match(TokenType type) {
     if(parser.current.type == type) {
         advance();
