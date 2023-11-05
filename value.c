@@ -76,7 +76,6 @@ ObjString* copyString(const char* string, int length) {
     char* heapPtr = (char*) malloc(sizeof(char) * (length + 1));
     if(heapPtr == NULL) {
         exit(1);
-     
     }
     memcpy(heapPtr, string, length);
     heapPtr[length] = '\0';
@@ -90,7 +89,7 @@ ObjString* copyString(const char* string, int length) {
     heapObj->length = length;
     heapObj->string = heapPtr;
     heapObj->hash = hashVal;
-    set(&vm.strings, heapObj, MAKE_BOOL(true));
+    set(&vm.strings, heapObj, MAKE_NIL());
 
     return heapObj;
  }

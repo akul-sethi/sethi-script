@@ -19,5 +19,7 @@ int main(int argc, const char* argv[]) {
 
     assert(string1 == string1);
     assert(string1 == string1_dup);
-    // assert(string1 != string2);
+    assert(string1_dup1 == string1_dup2);
+    assert(string1_dup3 == string1_dup);
+    assert(string1 != string2);
 }

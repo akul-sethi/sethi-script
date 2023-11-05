@@ -21,10 +21,8 @@ void initVM() {
     vm.objects = NULL;
 }
 
-void freeVM() {
 
-}
-
+//Removes value from top of stack and returns it
 Value pop() {
     vm.stackTop--;
     return *vm.stackTop;
@@ -170,9 +168,6 @@ static InterpretResult run() {
         case OP_DEFINE_GLOB: {
             ObjString* s = (ObjString*)READ_CONSTANT().as.obj;
             set(&vm.table, s, peek(1));
-            printValue(*get(&vm.table, s));
-            printf("\n");
-            printValue(*get(&vm.table, copyString("x", 1)));
             pop();
             break;
         } 
@@ -182,7 +177,8 @@ static InterpretResult run() {
             break;
         }
         case OP_GET_GLOB: {
-            Value* val = get(&vm.table, (ObjString*)READ_CONSTANT().as.obj);
+            ObjString* s =(ObjString*)READ_CONSTANT().as.obj;
+            Value* val = get(&vm.table, s);
             if(val == NULL) {
                 push(MAKE_NIL());
             } else {
@@ -216,12 +212,20 @@ static void freeObject(Obj* obj) {
     }
 }
 
+//Frees all objects from the heap as well as their associated strings.
 static void freeObjects() {
     while(vm.objects != NULL) {
         Obj* ptr = vm.objects;
         vm.objects = ptr->next;
         freeObject(ptr);
     }
+}
+
+//Frees all objects, string table, and global vars table.
+void freeVM() {
+    freeObjects();
+    freeTable(&vm.strings);
+    freeTable(&vm.table);
 }
 
 InterpretResult interpret(const char* source) { 
@@ -232,16 +236,14 @@ InterpretResult interpret(const char* source) {
         return INTERPRET_COMPILE_ERROR;
     } 
 
-    initVM();
+ 
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
     dissasembleChunk(&chunk, "Test");
     InterpretResult result = run();
-    freeObjects();
-    freeChunk(&chunk);
-    freeTable(&vm.strings);
-    return result;
 
+    freeChunk(&chunk);
+    return result;
 }
 

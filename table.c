@@ -16,6 +16,7 @@ void initTable(Table* table) {
 //Grows table by multiplying capacity by 2, and reinserting all elements. All entries are inititialized to (NULL, nil Value)
  void grow(Table* table) {
     int oldCapacity = table->capacity;
+    table->count = 0;
      if(table->capacity == 0) {
         table->capacity = 8;
     } else {
@@ -57,6 +58,7 @@ void set(Table* table, ObjString* key, Value value) {
 }
 
 //Gets the value associated with the given key from the given table.
+//Uses ObjString* referential equality
 Value* get(Table* table, ObjString* key) {
     if(table->entries == NULL) return NULL;
     int index = key->hash % table->capacity;
@@ -87,13 +89,6 @@ ObjString* findStringInTable(Table* table, const char* string, int length, uint3
     for(;;) {
     
         if(table->entries[index].key == NULL) {return NULL;}
-       
-         printf("%s", table->entries[index].key->string);
-         printf("\n");
-         printf("%s", string);
-         printf("\n");
-         printf("%d", memcmp(table->entries[index].key->string,  string, length));
-         printf("\n");
         if(table->entries[index].key->length == length && memcmp(table->entries[index].key->string,  string, length) == 0) {
             
             return table->entries[index].key;

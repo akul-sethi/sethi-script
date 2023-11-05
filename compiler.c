@@ -73,7 +73,7 @@ static void endCompile(int line) {
 }
 
 
-
+//Pushes a constant op, adds a constant to the pool, and adds its index afterwards
 static void constant() {
     int line = parser.previous.line;
 
@@ -100,6 +100,7 @@ static bool match(TokenType type) {
     return false;
 }
 
+//Parses and expression and consumes a final parenthesis
 static void grouping() {
    expression();
    consume(TOKEN_RIGHT_PAREN, "Expects a ')'");
