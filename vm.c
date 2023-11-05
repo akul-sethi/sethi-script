@@ -37,6 +37,7 @@ Value peek(int distance) {
     return *(vm.stackTop - distance);
 }
 
+//Returns a INTERPRET_RUNETIME_ERROR and print the given message, indicating the current line the program is at.
 InterpretResult runtimeError(const char* message) {
     int line = vm.chunk->lines[vm.ip - vm.chunk->code];
     printf("Error at line %d, %s", line, message);
@@ -172,15 +173,19 @@ static InterpretResult run() {
             break;
         } 
         case OP_SET_GLOB: {
-            set(&vm.table, (ObjString*)READ_CONSTANT().as.obj, peek(1));
-            pop();
+            ObjString* s = (ObjString*)READ_CONSTANT().as.obj;
+            if(get(&vm.table, s) == NULL) {
+                return runtimeError("Global variable is not defined");
+            }
+            set(&vm.table, s, peek(1));
+        
             break;
         }
         case OP_GET_GLOB: {
             ObjString* s =(ObjString*)READ_CONSTANT().as.obj;
             Value* val = get(&vm.table, s);
             if(val == NULL) {
-                push(MAKE_NIL());
+                return runtimeError("Global variable has not been defined");
             } else {
                 push(*val);
             }

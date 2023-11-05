@@ -13,6 +13,7 @@ typedef struct {
     Token previous;
     Token current;
     bool hadError;
+    bool panicMode;
 } Parser;
 
 Parser parser;
@@ -24,10 +25,12 @@ static void advance() {
     parser.current = scanToken();
 }
 
+//Prints what line and token the error is on as well as a message
 static void errorAtToken(Token* token, const char* message) {
-    if(parser.hadError) {
+    if(parser.panicMode) {
         return;
     }
+    parser.panicMode = true;
     printf("Error on line, %d, at ", token->line);
     if(token->type == TOKEN_EOF) {
         printf("end of file ");
@@ -41,6 +44,25 @@ static void errorAtToken(Token* token, const char* message) {
     parser.hadError = true;
 }
 
+//Advances the parser until it gets to a statement boundry and turns panic mode off
+static void synchronize() {
+    parser.panicMode = false;
+    while(parser.current.type != TOKEN_EOF) {
+        if(parser.previous.type == TOKEN_SEMI) return;
+        
+        switch(parser.previous.type) {
+            case TOKEN_FOR: return;
+            case TOKEN_WHILE: return;
+            case TOKEN_PRINT: return;
+            case TOKEN_IF: return;
+            case TOKEN_VAR: return;
+            default: break;
+        }
+        advance();
+    }
+}
+
+//Consumes the given type and throws error if it does not exist
 static void consume(TokenType type, const char* message) {
     if(parser.current.type == type) {
         advance();
@@ -74,7 +96,7 @@ static void endCompile(int line) {
 
 
 //Pushes a constant op, adds a constant to the pool, and adds its index afterwards
-static void constant() {
+static void constant(bool canAssign) {
     int line = parser.previous.line;
 
     switch (parser.previous.type)
@@ -91,7 +113,7 @@ static void constant() {
 
 }
 
-//Checks if the current token is the given, and advances the parser.
+//Checks if the current token is the given type, and advances the parser.
 static bool match(TokenType type) {
     if(parser.current.type == type) {
         advance();
@@ -101,12 +123,12 @@ static bool match(TokenType type) {
 }
 
 //Parses and expression and consumes a final parenthesis
-static void grouping() {
+static void grouping(bool canAssign) {
    expression();
    consume(TOKEN_RIGHT_PAREN, "Expects a ')'");
 }
 
-static void unary() {
+static void unary(bool canAssign) {
     TokenType type = parser.previous.type;
     int line = parser.previous.line;
 
@@ -121,7 +143,7 @@ static void unary() {
 }
 
 
-static void binary() {
+static void binary(bool canAssign) {
     TokenType type = parser.previous.type;
     int line = parser.previous.line;
     ParseRule* rule = getRule(type);
@@ -142,23 +164,8 @@ static void binary() {
     default: break;
     }
 }
-//  ObjString* makeObjString(const char* start, int length) {
-//     char* heapString = (char*) malloc(length  + 1);
-//     memcpy(heapString, start, length);
-//     heapString[length] = '\0';
 
-//     ObjString* objString = (ObjString*) malloc(sizeof(ObjString));
-//     objString->obj.type = OBJ_STRING;
-//     objString->obj.next = vm.objects;
-//     objString->length = length;
-//     objString->string = heapString;
-
-    
-//     vm.objects = &objString->obj;
-
-//     return objString;
-// }
-static void string() {
+static void string(bool canAssign) {
     int line = parser.previous.line;
     Value val = {.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start + 1,
     parser.previous.length - 2)};
@@ -166,10 +173,10 @@ static void string() {
     emitBytes(OP_CONSTANT, index, line);
 }
 
-static void variable() {
+static void variable(bool canAssign) {
     int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start,
     parser.previous.length)});
-    if(match(TOKEN_EQUAL)) {
+    if(canAssign && match(TOKEN_EQUAL)) {
         expression();
         emitBytes(OP_SET_GLOB, index, parser.previous.line);
     } else {
@@ -215,8 +222,8 @@ ParseRule* getRule(TokenType type) {
     return &rules[type];
 }
 
-
- void parsePrecedence(Precedence precedence){
+//Parses until it gets to a token which has less than or equal precedence than the given precedence
+void parsePrecedence(Precedence precedence){
     advance();
 
     ParseFn prefix = getRule(parser.previous.type)->prefix;
@@ -226,31 +233,36 @@ ParseRule* getRule(TokenType type) {
         return;
     }
 
-    prefix();
+    bool canAssign = precedence <= PREC_ASSIGNMENT;
+    prefix(canAssign);
+
 
     while(precedence <= getRule(parser.current.type)->precedence) {
         advance();
 
         ParseFn infix = getRule(parser.previous.type)->infix;
 
-        infix();
+        infix(canAssign);
     }
 
+    if(canAssign && match(TOKEN_EQUAL)) {
+        errorAtToken(&parser.current, "Illegal assignment target");
+    }
 }
-
-
 
 static void printStatement() {
     expression();
+    consume(TOKEN_SEMI, "Expected semicolon");
     emitByte(OP_PRINT, parser.current.line);
 }
 
 static void expressionStatement() {
     expression();
+    consume(TOKEN_SEMI, "Expected semicolon");
     emitByte(OP_POP, parser.current.line);
 }
 
-static void declaration() {
+static void varDeclaration() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
     int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
 
@@ -259,7 +271,7 @@ static void declaration() {
     } else {
         emitByte(OP_NIL, parser.current.line);
     }
-
+    consume(TOKEN_SEMI, "Expected semicolon");
     emitBytes(OP_DEFINE_GLOB, index, parser.current.line);
 }
 
@@ -268,15 +280,21 @@ static void statement() {
 
     if(match(TOKEN_PRINT)) {
         printStatement();
-    } else if(match(TOKEN_VAR)) {
-        declaration();
+    } else {
+        expressionStatement();
     }       
-    else {
-       expressionStatement();
-    }
-
-    consume(TOKEN_SEMI, "Expected semicolon");
 }
+
+
+static void declaration() {
+    if(match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+     if(parser.panicMode) synchronize();
+}
+
 void expression() {
     parsePrecedence(PREC_ASSIGNMENT);
 }
@@ -284,11 +302,12 @@ void expression() {
 bool compile(const char* source, Chunk* chunk) {
     initScanner(source);
     parser.hadError = false;
+    parser.panicMode = false;
     compilingChunk = chunk;
 
     advance();
     while(!match(TOKEN_EOF)) {
-        statement();
+        declaration();
     }
     
     endCompile(parser.current.line);
