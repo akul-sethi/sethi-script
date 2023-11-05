@@ -2,9 +2,23 @@ ObjString gets allocated to heap
 stores its own hash
 Hashmap has an array gets scaled every time 
 
-
+Creating Locals:
+    - Compiler stores list of Local, number of locals, current scope depth
+    - A Local has its token and depth
+    - Entering a block just increases and scope depth and then runs all its declerations
+    - Exiting a block decrements depth. Also remove locals from stack and array if their scope is too large 
+    -Split variable assingment into definiting and declaration
+    - Throw error if two locals with same name are in the same scope every time local is added
+Declaration
+    - If its global no need
+    - Otherwise add a local to the list with the correct name and depth. Set depth to -1 to mark that it declared but no defined
+Definition
+    - Global: add it to table
+    -Local: do nothing, top thing on the stack becomes the local. Mark that it has been inititialized by setting its depth correctly 
+Using Locals:
+    - Resolve if it exists and return an integer which indicates its location on the stack. NOTE: This is equivalent to its index in the array by design. (-1 if does not exist)
+    - Use this for local get and set
+    
 
 TODO:
 check if strings are freed from memory
-Fix table grow
-Fix copy string

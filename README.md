@@ -19,6 +19,8 @@ declaration    → classDecl
 Currently:
 statement      → exprStmt
                | printStmt ;
+               | block;
 
 declaration    → varDecl
                | statement ;
+block          → "{" declaration* "}" ;
