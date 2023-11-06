@@ -21,10 +21,10 @@ Parser parser;
 Chunk* compilingChunk;
 
 //Initializes the current Compiler with no locals and 0 depth
-void initCompiler(Compiler* current) {
-    current->currentScope = 0;
-    current->localCount = 0;
-    current = current;
+void initCompiler(Compiler* c) {
+    c->currentScope = 0;
+    c->localCount = 0;
+    current = c;
 }
 //Moves the parser down one;
 static void advance() {
@@ -32,13 +32,18 @@ static void advance() {
     parser.current = scanToken();
 }
 
-//Checks if the current token is the given type, and advances the parser.
+//Checks if the current token is the given type, and advances the parser if it is.
 static bool match(TokenType type) {
     if(parser.current.type == type) {
         advance();
         return true;
     }
     return false;
+}
+
+//Returns true if the current token has given type. Does not advance parser.
+static bool check(TokenType type) {
+    return parser.current.type == type;
 }
 
 //Prints what line and token the error is on as well as a message
@@ -78,7 +83,7 @@ static void synchronize() {
     }
 }
 
-//Consumes the given type and throws error if it does not exist
+//Consumes the given type at the current slot of the parser and throws error if it does not exist
 static void consume(TokenType type, const char* message) {
     if(parser.current.type == type) {
         advance();
@@ -121,7 +126,7 @@ static void enterBlock() {
 }
 //Parse the block
 static void block() {
-    while(!match(TOKEN_EOF)) {
+    while(!check(TOKEN_RIGHT_CURLY)) {
         declaration();
     }
 }
@@ -130,7 +135,10 @@ static void block() {
 static void exitBlock() {
     consume(TOKEN_RIGHT_CURLY, "Expects a closing }");
     current->currentScope--;
-    //TODO remove locals
+    while(current->localCount > 0 && current->locals[current->localCount - 1].depth > current->currentScope) {
+        current->localCount--;
+        emitByte(OP_POP, parser.current.line);
+    }
 }
 
 //Parse block statement
@@ -224,7 +232,7 @@ static bool sameIdentifier(Token* one, Token* two) {
 //Returns the index of the local on the stack which is equivalent to the given token. Returns -1 if none exist.
 static int getLocal(Token* token) {
     for(int i = current->localCount - 1; i >= 0; i--) {
-        if(sameIdentifier(&current->locals[i].token, token)) {
+        if(current->locals[i].depth != -1 && sameIdentifier(&current->locals[i].token, token)) {
             return i;
         }
     }
@@ -335,9 +343,8 @@ void expressionStatement() {
 
 
 //Defines variable
-static void definition() {
+static void definition(int index) {
     if(current->currentScope == 0) {
-        int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
         emitBytes(OP_DEFINE_GLOB, index, parser.current.line);
     } else {
         current->locals[current->localCount - 1].depth = current->currentScope;
@@ -347,12 +354,27 @@ static void definition() {
 //Declares and defines local and global variables
 static void varDeclaration() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
+    int index;
 
     //Declares variable
     if(current->currentScope > 0) {
-        current->locals[current->localCount] = (Local){.token = parser.previous, .depth = -1};
+        Local newLocal;
+        newLocal.token = parser.previous;
+        newLocal.depth = -1;
+        for(int i = current->localCount - 1; i >= 0; i--) {
+            if(current->locals[i].depth < current->currentScope) {
+                break;
+            }
+            if(sameIdentifier(&newLocal.token, &current->locals[i].token)) {
+                errorAtToken(&newLocal.token, "Cannot declare the same variable twice in the same scope");
+                return;
+            }
+        }
+        current->locals[current->localCount] = newLocal;
         current->localCount++;
-        //TODO: Duplicate declarations
+    } else {
+        //Creates string for global variable (part of defining; put here for succictness)
+        index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
     }
 
     if(match(TOKEN_EQUAL)) {
@@ -360,8 +382,9 @@ static void varDeclaration() {
     } else {
         emitByte(OP_NIL, parser.current.line);
     }
+    definition(index);
     consume(TOKEN_SEMI, "Expected semicolon");
-    definition();
+   
 }
 
 

@@ -161,8 +161,8 @@ Token scanToken() {
     case '\0': token.type = TOKEN_EOF; break;
     case '(': token.type = TOKEN_LEFT_PAREN; break;
     case ')': token.type = TOKEN_RIGHT_PAREN; break;
-    case '{': token.type = TOKEN_RIGHT_CURLY; break;
-    case '}': token.type = TOKEN_LEFT_CURLY; break;
+    case '{': token.type = TOKEN_LEFT_CURLY; break;
+    case '}': token.type = TOKEN_RIGHT_CURLY; break;
     case ',': token.type = TOKEN_COMMA; break;
     case '.': token.type = TOKEN_DOT; break;
     case ';': token.type = TOKEN_SEMI; break;

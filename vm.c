@@ -33,6 +33,7 @@ void push(Value val) {
     vm.stackTop++;
 }
 
+//Returns the Value that is "distance" values away from the top of the stack
 Value peek(int distance) {
     return *(vm.stackTop - distance);
 }
@@ -193,13 +194,14 @@ static InterpretResult run() {
              break;
         }
         case OP_SET_LOC: {
-            int index = vm.chunk->code[READ_BYTE()];
+            uint8_t index = READ_BYTE();
             vm.stack[index] = peek(1);
             break;
         }
         case OP_GET_LOC: {
-            int index = vm.chunk->code[READ_BYTE()];
+            uint8_t index = READ_BYTE();
             push(vm.stack[index]);
+            break;
         }
 
         default:
