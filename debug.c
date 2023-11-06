@@ -18,12 +18,22 @@ static int simpleInstruction(const char* name, int offset) {
     return offset + 1;
 }
 
+//Prints an instruction which takes an operand reprsenting a constant in the constant pool.
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     printf("%s   ", name);
     int index = chunk->code[offset + 1];
     printf("%4d '", index);
     printValue(chunk->constants.values[index]);
     printf("'");
+    return offset + 2;
+}
+
+//Prints an instruction which takes an operand representing a constant on the vm stack (indexed from bottom).
+static int localInstruction(const char* name, Chunk* chunk, int offset) {
+    printf("%s   ", name);
+    int index = chunk->code[offset + 1];
+    printf("Index from bottom of VM: ");
+    printf("%4d", index);
     return offset + 2;
 }
 
@@ -66,6 +76,8 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_DEFINE_GLOB: return constantInstruction("OP_DEFINE_GLOB", chunk, offset);
     case OP_SET_GLOB: return constantInstruction("OP_SET_GLOB", chunk, offset);
     case OP_GET_GLOB: return constantInstruction("OP_GET_GLOB", chunk, offset);
+    case OP_SET_LOC: return localInstruction("OP_SET_LOC", chunk, offset);
+    case OP_GET_LOC: return localInstruction("OP_GET_LOC", chunk, offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

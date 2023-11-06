@@ -8,9 +8,13 @@
 #include "table.h"
 
 typedef struct {
+    //All Op Codes
     Chunk* chunk;
+    //Points to the current OpCode being read
     uint8_t* ip;
+    //Array of Values representing the stack
     Value stack[STACK_MAX];
+    //Points to the value at the top of the stack
     Value* stackTop;
     Obj* objects;
     //All interned strings

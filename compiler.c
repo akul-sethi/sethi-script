@@ -16,13 +16,29 @@ typedef struct {
     bool panicMode;
 } Parser;
 
+Compiler* current;
 Parser parser;
 Chunk* compilingChunk;
 
+//Initializes the current Compiler with no locals and 0 depth
+void initCompiler(Compiler* current) {
+    current->currentScope = 0;
+    current->localCount = 0;
+    current = current;
+}
 //Moves the parser down one;
 static void advance() {
     parser.previous = parser.current;
     parser.current = scanToken();
+}
+
+//Checks if the current token is the given type, and advances the parser.
+static bool match(TokenType type) {
+    if(parser.current.type == type) {
+        advance();
+        return true;
+    }
+    return false;
 }
 
 //Prints what line and token the error is on as well as a message
@@ -94,6 +110,36 @@ static void endCompile(int line) {
     emitReturn(line);
 }
 
+static void expressionStatement();
+static void printStatement();
+static void statement();
+static void declaration();
+
+//What to do when entering block
+static void enterBlock() {
+   current->currentScope++;
+}
+//Parse the block
+static void block() {
+    while(!match(TOKEN_EOF)) {
+        declaration();
+    }
+}
+
+//What to do when exiting block
+static void exitBlock() {
+    consume(TOKEN_RIGHT_CURLY, "Expects a closing }");
+    current->currentScope--;
+    //TODO remove locals
+}
+
+//Parse block statement
+static void blockStatement() {
+    enterBlock();
+    block();
+    exitBlock();
+}
+
 
 //Pushes a constant op, adds a constant to the pool, and adds its index afterwards
 static void constant(bool canAssign) {
@@ -113,14 +159,6 @@ static void constant(bool canAssign) {
 
 }
 
-//Checks if the current token is the given type, and advances the parser.
-static bool match(TokenType type) {
-    if(parser.current.type == type) {
-        advance();
-        return true;
-    }
-    return false;
-}
 
 //Parses and expression and consumes a final parenthesis
 static void grouping(bool canAssign) {
@@ -165,6 +203,7 @@ static void binary(bool canAssign) {
     }
 }
 
+//Parses a string
 static void string(bool canAssign) {
     int line = parser.previous.line;
     Value val = {.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start + 1,
@@ -173,14 +212,45 @@ static void string(bool canAssign) {
     emitBytes(OP_CONSTANT, index, line);
 }
 
+//Returns true if the given token and this one represent the same identifer
+static bool sameIdentifier(Token* one, Token* two) {
+    if(one->type != TOKEN_IDENTIFIER || two->type != TOKEN_IDENTIFIER) {
+        return false;
+    } else {
+        return one->length == two->length && memcmp(one->start, two->start, one->length) == 0;
+    }
+}
+
+//Returns the index of the local on the stack which is equivalent to the given token. Returns -1 if none exist.
+static int getLocal(Token* token) {
+    for(int i = current->localCount - 1; i >= 0; i--) {
+        if(sameIdentifier(&current->locals[i].token, token)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+//Parses a variable
 static void variable(bool canAssign) {
-    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start,
-    parser.previous.length)});
+    int index = getLocal(&parser.previous);
+    OpCode setOp;
+    OpCode getOp;
+    if(index == -1) {
+        index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start,
+        parser.previous.length)});
+        setOp = OP_SET_GLOB;
+        getOp = OP_GET_GLOB;
+    } else {
+        setOp = OP_SET_LOC;
+        getOp = OP_GET_LOC;
+    }
+
     if(canAssign && match(TOKEN_EQUAL)) {
         expression();
-        emitBytes(OP_SET_GLOB, index, parser.previous.line);
+        emitBytes(setOp, index, parser.previous.line);
     } else {
-        emitBytes(OP_GET_GLOB, index, parser.previous.line);
+        emitBytes(getOp, index, parser.previous.line);
     }
 }
 
@@ -250,21 +320,40 @@ void parsePrecedence(Precedence precedence){
     }
 }
 
-static void printStatement() {
+void printStatement() {
     expression();
     consume(TOKEN_SEMI, "Expected semicolon");
     emitByte(OP_PRINT, parser.current.line);
 }
 
-static void expressionStatement() {
+void expressionStatement() {
     expression();
     consume(TOKEN_SEMI, "Expected semicolon");
     emitByte(OP_POP, parser.current.line);
 }
 
+
+
+//Defines variable
+static void definition() {
+    if(current->currentScope == 0) {
+        int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
+        emitBytes(OP_DEFINE_GLOB, index, parser.current.line);
+    } else {
+        current->locals[current->localCount - 1].depth = current->currentScope;
+    }
+}
+
+//Declares and defines local and global variables
 static void varDeclaration() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
-    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
+
+    //Declares variable
+    if(current->currentScope > 0) {
+        current->locals[current->localCount] = (Local){.token = parser.previous, .depth = -1};
+        current->localCount++;
+        //TODO: Duplicate declarations
+    }
 
     if(match(TOKEN_EQUAL)) {
         expression();
@@ -272,21 +361,23 @@ static void varDeclaration() {
         emitByte(OP_NIL, parser.current.line);
     }
     consume(TOKEN_SEMI, "Expected semicolon");
-    emitBytes(OP_DEFINE_GLOB, index, parser.current.line);
+    definition();
 }
 
 
-static void statement() {
+void statement() {
 
     if(match(TOKEN_PRINT)) {
         printStatement();
+    } else if(match(TOKEN_LEFT_CURLY)) {
+        blockStatement();
     } else {
         expressionStatement();
     }       
 }
 
 
-static void declaration() {
+void declaration() {
     if(match(TOKEN_VAR)) {
         varDeclaration();
     } else {

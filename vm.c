@@ -164,6 +164,7 @@ static InterpretResult run() {
         case OP_PRINT:
             printf("\n");
             printValue(pop());
+            printf("\n");
             break;
         case OP_POP: pop(); break;
         case OP_DEFINE_GLOB: {
@@ -190,6 +191,15 @@ static InterpretResult run() {
                 push(*val);
             }
              break;
+        }
+        case OP_SET_LOC: {
+            int index = vm.chunk->code[READ_BYTE()];
+            vm.stack[index] = peek(1);
+            break;
+        }
+        case OP_GET_LOC: {
+            int index = vm.chunk->code[READ_BYTE()];
+            push(vm.stack[index]);
         }
 
         default:
@@ -236,6 +246,8 @@ void freeVM() {
 InterpretResult interpret(const char* source) { 
     Chunk chunk;
     initChunk(&chunk);
+    Compiler compiler;
+    initCompiler(&compiler);
     if(!compile(source, &chunk)) {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;

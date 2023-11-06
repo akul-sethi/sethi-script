@@ -26,7 +26,9 @@ typedef enum {
     OP_POP,
     OP_DEFINE_GLOB,
     OP_SET_GLOB,
-    OP_GET_GLOB
+    OP_GET_GLOB,
+    OP_SET_LOC,
+    OP_GET_LOC
 } OpCode;
 
 typedef struct {
