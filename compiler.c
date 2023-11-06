@@ -126,7 +126,7 @@ static void enterBlock() {
 }
 //Parse the block
 static void block() {
-    while(!check(TOKEN_RIGHT_CURLY)) {
+    while(!check(TOKEN_RIGHT_CURLY) && check(TOKEN_EOF)) {
         declaration();
     }
 }
@@ -253,6 +253,7 @@ static void variable(bool canAssign) {
         setOp = OP_SET_LOC;
         getOp = OP_GET_LOC;
     }
+
 
     if(canAssign && match(TOKEN_EQUAL)) {
         expression();
