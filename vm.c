@@ -259,7 +259,7 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    dissasembleChunk(&chunk, "Test");
+    // dissasembleChunk(&chunk, "Test");
     InterpretResult result = run();
 
     freeChunk(&chunk);
