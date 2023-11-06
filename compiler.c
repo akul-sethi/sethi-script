@@ -126,7 +126,7 @@ static void enterBlock() {
 }
 //Parse the block
 static void block() {
-    while(!check(TOKEN_RIGHT_CURLY) && check(TOKEN_EOF)) {
+    while(!check(TOKEN_RIGHT_CURLY) && !check(TOKEN_EOF)) {
         declaration();
     }
 }
