@@ -39,9 +39,10 @@ Value peek(int distance) {
 }
 
 //Returns a INTERPRET_RUNETIME_ERROR and print the given message, indicating the current line the program is at.
+//Adds new line
 InterpretResult runtimeError(const char* message) {
     int line = vm.chunk->lines[vm.ip - vm.chunk->code];
-    printf("Error at line %d, %s", line, message);
+    printf("Error at line %d, %s\n", line, message);
     return INTERPRET_RUNTIME_ERROR;
 }
 
@@ -163,7 +164,6 @@ static InterpretResult run() {
             push(MAKE_BOOL((!pop().as.boolean)));
             break;
         case OP_PRINT:
-            printf("\n");
             printValue(pop());
             printf("\n");
             break;
@@ -259,7 +259,7 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    dissasembleChunk(&chunk, "Test");
+    // dissasembleChunk(&chunk, "Test");
     InterpretResult result = run();
 
     freeChunk(&chunk);
