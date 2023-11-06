@@ -1,16 +1,16 @@
 var x = "global";
 print "Global x: ";
 print x;
-{ 
+{   
     print "Inner x: ";
     var x = "inner";
     print x;
     {
-        print "Super inner x: ";
+        print "Super inner x: "
         var x = "super inner";
         print x;
     }
-    print "Is it back to 'inner'?";
+    print "Is it back to 'inner'?'"
     print x == "inner";
 }
 print "all done";

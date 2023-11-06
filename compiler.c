@@ -320,6 +320,10 @@ void parsePrecedence(Precedence precedence){
         advance();
 
         ParseFn infix = getRule(parser.previous.type)->infix;
+        if(infix == NULL) {
+            errorAtToken(&parser.previous, "No infix operator associated with token");
+            return;
+        }
 
         infix(canAssign);
     }
