@@ -1,0 +1,11 @@
+var dave = "outer";
+{
+	var dave = "inner";
+	print dave;
+	{
+		var dave = "super inner";
+		print dave;
+	}
+	print dave;
+}
+print dave;

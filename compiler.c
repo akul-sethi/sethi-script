@@ -219,7 +219,7 @@ static void string(bool canAssign) {
     int index = addConstant(compilingChunk, val);
     emitBytes(OP_CONSTANT, index, line);
 }
-
+ 
 //Returns true if the given token and this one represent the same identifer
 static bool sameIdentifier(Token* one, Token* two) {
     if(one->type != TOKEN_IDENTIFIER || two->type != TOKEN_IDENTIFIER) {
