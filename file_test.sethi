@@ -1,16 +1,5 @@
-var x = "global";
-print "Global x: ";
-print x;
-{   
-    print "Inner x: ";
-    var x = "inner";
+var x = 0;
+while(x < 100) {
     print x;
-    {
-        print "Super inner x: ";
-        var x = "super inner";
-        print x;
-    }
-    print "Is it back to 'inner'?'";
-    print x == "inner";
+    x = x + 1;
 }
-print "all done";
