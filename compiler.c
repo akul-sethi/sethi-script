@@ -160,12 +160,14 @@ static void blockStatement() {
     exitBlock();
 }
 
-//Patches section of chunk starting at "start" and encompassing two bytes total. Patches with value which would bring ip to current tip of chunk.
+//Patches section of chunk starting the byte after "start" and encompassing two bytes total. 
+//Patches with value which would bring ip to current tip of chunk if the ip starts by pointing at the second byte.
 static void patchJump(int start) {
-    uint16_t jumpLength = currentChunk()->count - start + 1;
-    uint8_t msb = jumpLength >> 8;
-    uint8_t lsb = jumpLength & '\xff';
-
+    uint16_t jumpLength = currentChunk()->count - start - 2;
+    uint8_t msb = (uint8_t)(jumpLength >> 8);
+    uint8_t lsb = (uint8_t)jumpLength;
+    currentChunk()->code[start + 1] = msb;
+    currentChunk()->code[start + 2] = lsb;
 }
 
 //Parses an if statement
@@ -173,7 +175,12 @@ static void ifStatement() {
     consume(TOKEN_LEFT_PAREN, "Needs '(' after if token");
     expression();
     consume(TOKEN_RIGHT_PAREN, "Needs closing ')' for if token");
-
+    
+    int jumpCodeIndex = currentChunk()->count;
+    emitJump(OP_JUMP_IF_FALSE);
+    
+    statement();
+    patchJump(jumpCodeIndex);
 
 }
 
