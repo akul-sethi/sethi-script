@@ -18,6 +18,25 @@ Definition
 Using Locals:
     - Resolve if it exists and return an integer which indicates its location on the stack. NOTE: This is equivalent to its index in the array by design. (-1 if does not exist)
     - Use this for local get and set
+
+Control Flow:
+    -Emit jump emits jump op and then two place holder bytes. Also returns current byte in chunk
+    - patch jump takes the byte where the jump was emitted, calculates the distance to that, and replaces the placeholder with this distance
+    - emit loop takes in a loop op and offset and jumps back that many codes
+    - OP_JUMP_IF_FALSE
+        - Jumps if last value on stack is false does not pop
+    -JUMP
+        - Jumps over 2 bytes of ops
+    - LOOP 
+        - Goes back given number of ops
+    - AND 
+        - hops over expression if its false
+    - OR 
+        - hops over if its true, needs clever implementation
+    - WHILE
+        - Jumps back to before the expression, Jumps over everything if false
+
+
     
 
 TODO:

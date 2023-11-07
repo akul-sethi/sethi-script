@@ -93,22 +93,34 @@ static void consume(TokenType type, const char* message) {
     errorAtToken(&parser.current, message);
 }
 
+//Returns the current compiling chunk.
 static Chunk* currentChunk() {
     return compilingChunk;
 }
 
+//Emits one OP.
 static void emitByte(uint8_t byte, int line) {
     Chunk* chunk = currentChunk();
     writeChunk(chunk, byte, line);
 }
 
+//Emits two OPS.
 static void emitBytes(uint8_t byte1, uint8_t byte2, int line) {
    emitByte(byte1, line);
    emitByte(byte2, line);
 } 
 
+//Emits return OP.
 static void emitReturn(int line) {
     emitByte(OP_RETURN, line);
+}
+
+
+//Jumps emites a jump instruction and two bytes as placeholders for the length of the jump.
+static void emitJump(uint8_t op) {
+    emitByte(op, parser.previous.line);
+    emitByte('\xff', parser.previous.line);
+    emitByte('\xff', parser.previous.line);
 }
 
 static void endCompile(int line) {
@@ -148,6 +160,29 @@ static void blockStatement() {
     exitBlock();
 }
 
+//Patches section of chunk starting the byte after "start" and encompassing two bytes total. 
+//Patches with value which would bring ip to current tip of chunk if the ip starts by pointing at the second byte.
+static void patchJump(int start) {
+    uint16_t jumpLength = currentChunk()->count - start - 2;
+    uint8_t msb = (uint8_t)(jumpLength >> 8);
+    uint8_t lsb = (uint8_t)jumpLength;
+    currentChunk()->code[start + 1] = msb;
+    currentChunk()->code[start + 2] = lsb;
+}
+
+//Parses an if statement
+static void ifStatement() {
+    consume(TOKEN_LEFT_PAREN, "Needs '(' after if token");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Needs closing ')' for if token");
+    
+    int jumpCodeIndex = currentChunk()->count;
+    emitJump(OP_JUMP_IF_FALSE);
+    
+    statement();
+    patchJump(jumpCodeIndex);
+
+}
 
 //Pushes a constant op, adds a constant to the pool, and adds its index afterwards
 static void constant(bool canAssign) {
@@ -399,6 +434,9 @@ void statement() {
         printStatement();
     } else if(match(TOKEN_LEFT_CURLY)) {
         blockStatement();
+    }
+    else if(match(TOKEN_IF)){
+        ifStatement();
     } else {
         expressionStatement();
     }       

@@ -37,6 +37,15 @@ static int localInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2;
 }
 
+//Prints instruction which takes two bytes for an operand which represents the jump length
+static int jumpInstruction(const char* name, Chunk* chunk, int offset) {
+    printf("%s   ", name);
+    uint16_t index = ((((uint16_t)chunk->code[offset + 1]) << 8) | (uint16_t)chunk->code[offset + 2]);
+    printf("Length of jump: ");
+    printf("%u", index);
+    return offset + 3;
+}
+
 // static int globalInstruction(const char* name, Chunk* chunk, int offset) {
 //     printf("%s   ", name);
 //     int index = chunk->code[offset + 1];
@@ -78,6 +87,9 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_GET_GLOB: return constantInstruction("OP_GET_GLOB", chunk, offset);
     case OP_SET_LOC: return localInstruction("OP_SET_LOC", chunk, offset);
     case OP_GET_LOC: return localInstruction("OP_GET_LOC", chunk, offset);
+    case OP_JUMP: return jumpInstruction("OP_JUMP", chunk, offset);
+    case OP_JUMP_BACK: return jumpInstruction("OP_JUMP_BACK", chunk, offset);
+    case OP_JUMP_IF_FALSE: return jumpInstruction("OP_JUMP_IF_FALSE", chunk, offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

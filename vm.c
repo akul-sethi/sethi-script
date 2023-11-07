@@ -70,6 +70,8 @@ bool sameObject(Value a, Value b) {
 static InterpretResult run() {
     #define READ_BYTE() (*vm.ip++)
     #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+    //Increments the ip twice and returns the uint16_t value of the next two bytes.
+    #define READ_JUMP() ((uint16_t)(*vm.ip++ << 8) + (uint16_t) (*vm.ip++))
     #define BINARY_OP(op) do { \
         if(peek(1).type != VALUE_NUM || peek(2).type != VALUE_NUM) { \
             return runtimeError("Can not operate on these types"); \
@@ -201,6 +203,13 @@ static InterpretResult run() {
         case OP_GET_LOC: {
             uint8_t index = READ_BYTE();
             push(vm.stack[index]);
+            break;
+        }
+        case OP_JUMP_IF_FALSE: {
+            if(IS_BOOL(peek(1)) && peek(1).as.boolean == false) {
+                uint16_t jumpLength = READ_JUMP();
+                vm.ip += jumpLength;
+            }
             break;
         }
 
