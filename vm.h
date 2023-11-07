@@ -8,18 +8,19 @@
 #include "table.h"
 
 typedef struct {
-    //All Op Codes
+    //All Op Codes.
     Chunk* chunk;
-    //Points to the current OpCode being read
+    //Points to the current OpCode that has just been read.
     uint8_t* ip;
-    //Array of Values representing the stack
+    //Array of Values representing the stack.
     Value stack[STACK_MAX];
     //Points to the value at the top of the stack
     Value* stackTop;
+    //All objects that have been created on the heap.
     Obj* objects;
-    //All interned strings
+    //All interned strings.
     Table strings;
-    //All global vars
+    //All global vars.
     Table table;
 } VM;
 

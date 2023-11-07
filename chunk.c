@@ -11,6 +11,7 @@ void initChunk(Chunk* chunk) {
     initValueArray(&chunk->constants);
 }
 
+//Increments chunk top pointer by one and sets the op there to the given byte. Dynamically resizes chunk if it exceeds space.
 void writeChunk(Chunk* chunk, uint8_t byte, int line) {
     if(chunk->capacity < chunk->count + 1) {
         uint32_t oldCapacity = chunk->capacity;
