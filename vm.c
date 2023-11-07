@@ -71,7 +71,7 @@ static InterpretResult run() {
     #define READ_BYTE() (*vm.ip++)
     #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
     //Increments the ip twice and returns the uint16_t value of the next two bytes.
-    #define READ_JUMP() ((uint16_t)(*vm.ip++ << 8) + (uint16_t) (*vm.ip++))
+    #define READ_JUMP() ((((uint16_t)*vm.ip++) << 8) + *vm.ip++)
     #define BINARY_OP(op) do { \
         if(peek(1).type != VALUE_NUM || peek(2).type != VALUE_NUM) { \
             return runtimeError("Can not operate on these types"); \
@@ -91,17 +91,20 @@ static InterpretResult run() {
         push(final); \
         } while(false);
 
+    #ifdef DEBUG_TRACE_EXECUTION
+        printf("== VM State == \n");
+    #endif
     for(;;) {
-        // #ifdef DEBUG_TRACE_EXECUTION
-        //     printf("        ");
-        //     for(Value* slot = vm.stack; slot < vm.stackTop; slot++) {
-        //         printf("[");
-        //         printValue(*slot);
-        //         printf("]");
-        //     }
-        //     printf("\n");
-        //     dissasembleInstruction(vm.chunk,(int)(vm.ip - vm.chunk->code));
-        // #endif
+        #ifdef DEBUG_TRACE_EXECUTION
+            dissasembleInstruction(vm.chunk,(int)(vm.ip - vm.chunk->code));
+            printf("   stack before (bottom first): ");
+            for(Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+                printf("[");
+                printValue(*slot);
+                printf("]");
+            }
+            printf("\n");
+        #endif
         uint8_t instruction = READ_BYTE();
         switch (instruction)
         {
@@ -206,10 +209,34 @@ static InterpretResult run() {
             break;
         }
         case OP_JUMP_IF_FALSE: {
-            if(IS_BOOL(peek(1)) && peek(1).as.boolean == false) {
-                uint16_t jumpLength = READ_JUMP();
+            uint16_t jumpLength = READ_JUMP();
+            if(IS_FALSE(peek(1))) { 
                 vm.ip += jumpLength;
-            }
+            } 
+            break;
+        }
+        case OP_JUMP: {
+            uint16_t jumpLength = READ_JUMP();
+            vm.ip += jumpLength;
+            break;
+        }
+        case OP_AND: {
+            Value temp = MAKE_BOOL(IS_TRUE(peek(1)) && IS_TRUE(peek(2)));
+            pop();
+            pop();
+            push(temp);
+            break;
+        }
+        case OP_OR: {
+            Value temp = MAKE_BOOL(IS_TRUE(peek(1)) || IS_TRUE(peek(2)));
+            pop();
+            pop();
+            push(temp);
+            break;
+        }
+        case OP_JUMP_BACK: {
+            uint16_t jumpLength = READ_JUMP();
+            vm.ip -= jumpLength;
             break;
         }
 
@@ -220,6 +247,7 @@ static InterpretResult run() {
 
     #undef READ_BYTE
     #undef READ_CONSTANT
+    #undef READ_JUMP
 
 }
 
@@ -268,7 +296,7 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    dissasembleChunk(&chunk, "Test");
+    dissasembleChunk(&chunk, "Chunk");
     InterpretResult result = run();
 
     freeChunk(&chunk);

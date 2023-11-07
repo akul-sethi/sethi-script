@@ -9,6 +9,8 @@
 #include "vm.h"
 #include "debug.h"
 
+#define UINT_16_SIZE 65535
+
 typedef struct {
     Token previous;
     Token current;
@@ -116,13 +118,28 @@ static void emitReturn(int line) {
 }
 
 
-//Jumps emites a jump instruction and two bytes as placeholders for the length of the jump.
+//Emits a jump instruction and two bytes as placeholders for the length of the jump.
 static void emitJump(uint8_t op) {
     emitByte(op, parser.previous.line);
     emitByte('\xff', parser.previous.line);
     emitByte('\xff', parser.previous.line);
 }
+//Emits a jump back instruction and two bytes representing how far back to jump. Throws error if jump is larger than UINT_16_SIZE
+/// @param backCount represents the count of the byte which ip will be set too. 
+static void emitJumpBack(int backCount) {
+    //Add 3 to compensate for where the pointer is after processing both operands
+    if(currentChunk()->count - backCount + 3 > UINT_16_SIZE) {
+        errorAtToken(&parser.previous, "Loop is too large");
+    }
+    uint16_t jumpLength = (uint16_t) (currentChunk()->count - backCount + 3);
+    uint8_t msb = (uint8_t)(jumpLength >> 8);
+    uint8_t lsb = (uint8_t)jumpLength;
+    emitByte(OP_JUMP_BACK, parser.previous.line);
+    emitByte(msb, parser.previous.line);
+    emitByte(lsb, parser.previous.line);
+}
 
+//Ends compile by emitting a return OP
 static void endCompile(int line) {
     emitReturn(line);
 }
@@ -161,13 +178,17 @@ static void blockStatement() {
 }
 
 //Patches section of chunk starting the byte after "start" and encompassing two bytes total. 
-//Patches with value which would bring ip to current tip of chunk if the ip starts by pointing at the second byte.
-static void patchJump(int start) {
-    uint16_t jumpLength = currentChunk()->count - start - 2;
+//Patches with value which would bring ip to current tip of chunk if the ip starts by pointing at second byte.
+static void patchJump(int startCount) {
+    
+    if(currentChunk()->count - startCount - 2 > UINT_16_SIZE) {
+        errorAtToken(&parser.previous, "Cannot jump that much code");
+    }
+    uint16_t jumpLength = currentChunk()->count - startCount - 2;
     uint8_t msb = (uint8_t)(jumpLength >> 8);
     uint8_t lsb = (uint8_t)jumpLength;
-    currentChunk()->code[start + 1] = msb;
-    currentChunk()->code[start + 2] = lsb;
+    currentChunk()->code[startCount] = msb;
+    currentChunk()->code[startCount + 1] = lsb;
 }
 
 //Parses an if statement
@@ -176,13 +197,40 @@ static void ifStatement() {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Needs closing ')' for if token");
     
-    int jumpCodeIndex = currentChunk()->count;
+    int skipIfJump = currentChunk()->count + 1;
     emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP, parser.previous.line);
     
     statement();
-    patchJump(jumpCodeIndex);
 
+    int exitJumpCount = currentChunk()->count + 1;
+    emitJump(OP_JUMP);
+    patchJump(skipIfJump);
+
+    if(match(TOKEN_ELSE)) {
+        statement();
+    }
+    emitByte(OP_POP, parser.previous.line);
+    patchJump(exitJumpCount);
 }
+
+//Parses while statement
+static void whileStatement() {
+    consume(TOKEN_LEFT_PAREN, "Needs '(' after if token");
+    int beforeExpressionCount = currentChunk()->count;
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Needs closing ')' for if token");
+
+    int skipWhileJump = currentChunk()->count + 1;
+    emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP, parser.previous.line);
+    statement();
+    emitJumpBack(beforeExpressionCount);
+
+    patchJump(skipWhileJump);
+    emitByte(OP_POP, parser.previous.line);
+}
+
 
 //Pushes a constant op, adds a constant to the pool, and adds its index afterwards
 static void constant(bool canAssign) {
@@ -298,6 +346,27 @@ static void variable(bool canAssign) {
     }
 }
 
+//Parses AND operator skips rest of expression if first operand is false
+static void and_(bool canAssign) {
+    int jumpCount = currentChunk()->count + 1;
+    emitJump(OP_JUMP_IF_FALSE);
+    parsePrecedence(PREC_AND + 1);
+    emitByte(OP_AND, parser.previous.line);
+    patchJump(jumpCount);
+}
+
+//Parses OR operator and skips rest of expression if the first one is true
+static void or_(bool canAssign) {
+    int jumpTheJumpCount = currentChunk()->count + 1;
+    emitJump(OP_JUMP_IF_FALSE);
+    int jumpTheSecondPartCount = currentChunk()->count + 1;
+    emitJump(OP_JUMP);
+    patchJump(jumpTheJumpCount);
+    parsePrecedence(PREC_OR + 1);
+    emitByte(OP_OR, parser.previous.line);
+    patchJump(jumpTheSecondPartCount);
+}
+
  ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
@@ -322,6 +391,9 @@ static void variable(bool canAssign) {
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {constant, NULL, PREC_PRIMARY},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_AND] = {NULL, and_, PREC_AND},
+    [TOKEN_OR] = {NULL, or_, PREC_OR},
     [TOKEN_FOR] = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE] = {NULL, NULL, PREC_NONE},
     [TOKEN_TRUE] = {constant, NULL, PREC_PRIMARY},
@@ -336,7 +408,7 @@ ParseRule* getRule(TokenType type) {
     return &rules[type];
 }
 
-//Parses until it gets to a token which has less than or equal precedence than the given precedence
+//Advances past the current token and parses the expression as long as it has precedence greater than or equal to the given precedence.
 void parsePrecedence(Precedence precedence){
     advance();
 
@@ -437,6 +509,8 @@ void statement() {
     }
     else if(match(TOKEN_IF)){
         ifStatement();
+    } else if(match(TOKEN_WHILE)) {
+        whileStatement();
     } else {
         expressionStatement();
     }       
