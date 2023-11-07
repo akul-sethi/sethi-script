@@ -57,6 +57,8 @@ uint32_t hash(const char* string, int length);
 #define IS_OBJ(value) (value.type==VALUE_OBJ)
 #define IS_NUM(value) (value.type==VALUE_NUM)
 #define IS_STRING(value) isObjectOfType(value, OBJ_STRING)
+#define IS_FALSE(value) (IS_BOOL(value) && !value.as.boolean)
+#define IS_TRUE(value) (IS_BOOL(value) && value.as.boolean)
 
 #define MAKE_BOOL(bool) ((Value){.type = VALUE_BOOL, .as.boolean = bool})
 #define MAKE_NUM(value) ((Value){.type = VALUE_NUM, .as.number = value})

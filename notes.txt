@@ -33,8 +33,18 @@ Control Flow:
         - hops over expression if its false
     - OR 
         - hops over if its true, needs clever implementation
+    -If
+        - Jumps of to else if false. Else just pops last value on stack if its empty
+        - Jumps over else if it evaluates
     - WHILE
         - Jumps back to before the expression, Jumps over everything if false
+    -For
+        - Needs scope for variables
+        - All three are optional
+        - Jumps over increment in the beginning
+        - Body statement than loops back to increment, which loops back to condition
+        - If condition false, jump to end
+
 
 
     
