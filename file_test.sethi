@@ -1,16 +1,9 @@
-var x = "global";
-print "Global x: ";
-print x;
-{   
-    print "Inner x: ";
-    var x = "inner";
-    print x;
-    {
-        print "Super inner x: ";
-        var x = "super inner";
-        print x;
-    }
-    print "Is it back to 'inner'?'";
-    print x == "inner";
-}
-print "all done";
+var a;
+var b;
+var c;
+var d;
+var e;
+print a + b;
+var f;
+var g;
+print a;
