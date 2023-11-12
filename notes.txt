@@ -46,8 +46,11 @@ Control Flow:
         - If condition false, jump to end
 
 
-
+Functions:
+    - Fix return context
+    - Fix def contex
+    - Add return statement to function if it does not have one.
     
 
 TODO:
-check if strings are freed from memory
+

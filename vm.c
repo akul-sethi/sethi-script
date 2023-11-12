@@ -11,6 +11,7 @@
 VM vm;
 
 static void resetStack() {
+    vm.frameBottom = 0;
     vm.stackTop = vm.stack;
 }
 
@@ -108,8 +109,19 @@ static InterpretResult run() {
         uint8_t instruction = READ_BYTE();
         switch (instruction)
         {
-        case OP_RETURN:
-           return INTERPRET_OK;
+        case OP_RETURN: {
+            if(vm.frameBottom == 0) {
+                return INTERPRET_OK;
+            }
+            Value returnVal = pop();
+            vm.ip = vm.chunk->code + vm.returnCount;
+            vm.stackTop = vm.stack + vm.frameBottom;
+
+            vm.frameBottom = pop().as.number;
+            vm.returnCount = pop().as.number;
+            push(returnVal);
+            break;
+        }
         case OP_CONSTANT: {
             push(READ_CONSTANT());
             break;
@@ -200,12 +212,12 @@ static InterpretResult run() {
         }
         case OP_SET_LOC: {
             uint8_t index = READ_BYTE();
-            vm.stack[index] = peek(1);
+            vm.stack[vm.frameBottom + index] = peek(1);
             break;
         }
         case OP_GET_LOC: {
             uint8_t index = READ_BYTE();
-            push(vm.stack[index]);
+            push(vm.stack[vm.frameBottom + index]);
             break;
         }
         case OP_JUMP_IF_FALSE: {
@@ -237,6 +249,31 @@ static InterpretResult run() {
         case OP_JUMP_BACK: {
             uint16_t jumpLength = READ_JUMP();
             vm.ip -= jumpLength;
+            break;
+        } 
+        case OP_CALL: {
+            Value last = pop();
+            if(last.type != VALUE_OBJ || last.as.obj->type != OBJ_FUNCTION) {
+                runtimeError("Value is not callable");
+            }
+            ObjFunc* func = (ObjFunc*)last.as.obj;
+            //Patch placeholders
+            //Frame bottom on top of return address
+            uint8_t numActualParams = READ_BYTE();
+            if(func->numParams != numActualParams) {
+                for(int i = 0; i < numActualParams + 2; i++) {
+                    pop();
+                }
+                return runtimeError("Invalid number of parameters");
+            }
+            int currentCount = vm.ip - vm.chunk->code;
+            *(vm.stackTop - numActualParams -1) = (Value) {.type = VALUE_NUM, .as.number = vm.frameBottom};
+            *(vm.stackTop - numActualParams - 2) = (Value) {.type = VALUE_NUM, .as.number = vm.returnCount};
+
+            vm.frameBottom = (uint8_t)(vm.stackTop - vm.stack) - (uint8_t)(numActualParams);
+            vm.returnCount = (int)(vm.ip - vm.chunk->code);
+
+            vm.ip = vm.chunk->code + func->startCount;
             break;
         }
 
@@ -296,10 +333,10 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    // dissasembleChunk(&chunk, "Chunk");
+    dissasembleChunk(&chunk, "Chunk");
     InterpretResult result = run();
 
     freeChunk(&chunk);
-    return result;
+    return INTERPRET_OK;
 }
 

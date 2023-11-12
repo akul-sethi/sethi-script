@@ -46,6 +46,16 @@ static int jumpInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 3;
 }
 
+//Prints instruction which takes one byte for an operand which reprsents number of params
+static int callInstruction(const char* name, Chunk* chunk, int offset) {
+     printf("%s   ", name);
+    int index = chunk->code[offset + 1];
+    printf("Number of params for function: ");
+    printf("%4d", index);
+    return offset + 2;
+}
+ 
+
 // static int globalInstruction(const char* name, Chunk* chunk, int offset) {
 //     printf("%s   ", name);
 //     int index = chunk->code[offset + 1];
@@ -92,6 +102,7 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_JUMP_IF_FALSE: return jumpInstruction("OP_JUMP_IF_FALSE", chunk, offset);
     case OP_AND: return simpleInstruction("OP_AND", offset);
     case OP_OR: return simpleInstruction("OP_OR", offset);
+    case OP_CALL: return callInstruction("OP_CALL", chunk, offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

@@ -11,7 +11,8 @@ typedef enum {
 } ValueType;
 
 typedef enum {
-    OBJ_STRING
+    OBJ_STRING,
+    OBJ_FUNCTION
 } ObjType;
 
 typedef struct Obj Obj;
@@ -27,6 +28,13 @@ typedef struct {
     char* string;
     u_int32_t hash;
 } ObjString;
+
+typedef struct {
+    Obj obj;
+    //The count of the byte which the vm should point to, before starting the function (the byte before the first of the funcion)
+    int startCount;
+    uint8_t numParams;
+} ObjFunc;
 
 typedef struct {
     ValueType type;
@@ -50,6 +58,7 @@ void printValue(Value val);
 bool isObjectOfType(Value val, ObjType type);
 ObjString* copyString(const char* string, int length);
 uint32_t hash(const char* string, int length);
+ObjFunc* createFunc(int startCount, int numParams);
 
 
 #define IS_NIL(value) (value.type==VALUE_NIL)

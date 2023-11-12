@@ -1,9 +1,7 @@
-var a;
-var b;
-var c;
-var d;
-var e;
-print a + b;
-var f;
-var g;
-print a;
+def hello(hey) {
+    print hey;
+    var x = 20;
+    return hey + x;
+}
+
+print hello(10);
