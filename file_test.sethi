@@ -1,7 +1,11 @@
-def hello(hey) {
-    print hey;
-    var x = 20;
-    return hey + x;
+def printer(x) {
+   print x;
+   return
 }
 
-print hello(10);
+def functionCaller(func, param) {
+    func(param);
+    return
+}
+
+functionCaller(printer, 1);

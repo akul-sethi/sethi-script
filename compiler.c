@@ -509,7 +509,8 @@ static int parseParameters() {
     enterBlock();
     int numParams = 0;
 
-    while(match(TOKEN_IDENTIFIER)) {
+    while(!match(TOKEN_RIGHT_PAREN) && !match(TOKEN_EOF)) {
+        consume(TOKEN_IDENTIFIER, "Needs identifier after '(' in function def");
         Local newLocal;
         numParams++;
         newLocal.token = parser.previous;
@@ -525,8 +526,11 @@ static int parseParameters() {
         }
         current->locals[current->localCount] = newLocal;
         current->localCount++;
+        if(match(TOKEN_RIGHT_PAREN)) {
+            break;
+        }
+        consume(TOKEN_COMMA, "Needs commas between variables");
     }
-    consume(TOKEN_RIGHT_PAREN, "Expects ')' after parameters");
 
     return numParams;
 }
@@ -551,7 +555,11 @@ static void funcDeclaration() {
     consume(TOKEN_RIGHT_CURLY, "Expects '}' after function body");
 
     patchJump(funcJumpCount);
+    //Remove locals
     current->currentScope--;
+    while(current->localCount > 0 && current->locals[current->localCount - 1].depth > current->currentScope) {
+        current->localCount--;
+    }
 }
 
 //Declares and defines local and global variables

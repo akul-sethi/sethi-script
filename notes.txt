@@ -48,8 +48,9 @@ Control Flow:
 
 Functions:
     - Fix return context
-    - Fix def contex
+    - Fix def context
     - Add return statement to function if it does not have one.
+    - Fix where OP Codes are stored for function so repl works 
     
 
 TODO:
