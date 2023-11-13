@@ -1,11 +1,5 @@
-def printer(x) {
-   print x;
-   return
+def hello(hello) {
+    print hello;
 }
 
-def functionCaller(func, param) {
-    func(param);
-    return
-}
-
-functionCaller(printer, 1);
+hello("hey");

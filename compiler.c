@@ -147,7 +147,8 @@ static void endCompile(int line) {
 static void expressionStatement();
 static void printStatement();
 static void statement();
-static void declaration();
+static void globalDeclaration();
+static void localDeclaration();
 
 //What to do when entering block
 static void enterBlock() {
@@ -156,16 +157,18 @@ static void enterBlock() {
 //Parse the block
 static void block() {
     while(!check(TOKEN_RIGHT_CURLY) && !check(TOKEN_EOF)) {
-        declaration();
+        localDeclaration();
     }
 }
 
 //What to do when exiting block
-static void exitBlock() {
+static void exitBlock(bool emitPops) {
     current->currentScope--;
     while(current->localCount > 0 && current->locals[current->localCount - 1].depth > current->currentScope) {
         current->localCount--;
-        emitByte(OP_POP, parser.current.line);
+        if(emitPops) {
+            emitByte(OP_POP, parser.current.line);
+        }
     }
 }
 
@@ -174,7 +177,7 @@ static void blockStatement() {
     enterBlock();
     block();
     consume(TOKEN_RIGHT_CURLY, "Expects a closing }");
-    exitBlock();
+    exitBlock(true);
 }
 
 //Patches section of chunk starting the byte after "start" and encompassing two bytes total. 
@@ -344,7 +347,7 @@ static void variable(bool canAssign) {
     } else if(match(TOKEN_LEFT_PAREN)) {
         emitBytes(OP_NIL, OP_NIL, parser.previous.line);
         uint8_t numParams = 0;
-        while(!match(TOKEN_RIGHT_PAREN) && !match(TOKEN_EOF))  {
+        while(!match(TOKEN_RIGHT_PAREN) && !match(TOKEN_EOF) && !parser.hadError)  {
             numParams++;
             expression();
 
@@ -471,12 +474,12 @@ void expressionStatement() {
 
 //Parses a return statment
 static void returnStatement() {
-    if(!check(TOKEN_RIGHT_CURLY)) {
+    if(!check(TOKEN_SEMI) && !check(TOKEN_EOF)) {
         expression();
-        consume(TOKEN_SEMI, "Needs ';' to finish line");
     } else {
         emitByte(OP_NIL, parser.previous.line);
     }
+    consume(TOKEN_SEMI, "Needs ';' to finish line");
     emitByte(OP_RETURN, parser.previous.line);
 }
 
@@ -509,7 +512,7 @@ static int parseParameters() {
     enterBlock();
     int numParams = 0;
 
-    while(!match(TOKEN_RIGHT_PAREN) && !match(TOKEN_EOF)) {
+    while(!match(TOKEN_RIGHT_PAREN) && !match(TOKEN_EOF) && !parser.hadError) {
         consume(TOKEN_IDENTIFIER, "Needs identifier after '(' in function def");
         Local newLocal;
         numParams++;
@@ -552,14 +555,13 @@ static void funcDeclaration() {
   
     consume(TOKEN_LEFT_CURLY, "Expects '{' after function def");
     block();
+    //Default return
+    emitBytes(OP_NIL, OP_RETURN, parser.previous.line);
     consume(TOKEN_RIGHT_CURLY, "Expects '}' after function body");
 
     patchJump(funcJumpCount);
     //Remove locals
-    current->currentScope--;
-    while(current->localCount > 0 && current->locals[current->localCount - 1].depth > current->currentScope) {
-        current->localCount--;
-    }
+    exitBlock(false);
 }
 
 //Declares and defines local and global variables
@@ -608,21 +610,29 @@ void statement() {
     }
     else if(match(TOKEN_IF)){
         ifStatement();
+    }
+    else if(match(TOKEN_RETURN)) {
+        returnStatement();
     } else if(match(TOKEN_WHILE)) {
         whileStatement();
-    } else if(match(TOKEN_RETURN)) {
-        returnStatement();
-    }else {
+    } else {
         expressionStatement();
     }       
 }
 
 
-void declaration() {
+void globalDeclaration() {
+    if(match(TOKEN_DEF)) {
+        funcDeclaration();
+        if(parser.panicMode) synchronize();
+    } else {
+        localDeclaration();
+    }
+}
+
+void localDeclaration() {
     if(match(TOKEN_VAR)) {
         varDeclaration();
-    } else if (match(TOKEN_DEF)) {
-        funcDeclaration();
     } else {
         statement();
     }
@@ -641,7 +651,7 @@ bool compile(const char* source, Chunk* chunk) {
 
     advance();
     while(!match(TOKEN_EOF)) {
-        declaration();
+        globalDeclaration();
     }
     
     endCompile(parser.current.line);

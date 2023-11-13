@@ -4,23 +4,26 @@ Efficient, lightweight language with a novel form of types: Bounded Types.
 # Language Design
 
 # Grammar
-Vision:
-statement      → exprStmt
-               | forStmt
-               | ifStmt
-               | printStmt
-               | returnStmt
-               | whileStmt
-               | block ;
-declaration    → classDecl
-               | funDecl
-               | varDecl
-               | statement ;
-Currently:
-statement      → exprStmt
-               | printStmt ;
-               | block;
+statement      → exprStmt ;  
+               | ifStmt    
+               | printStmt ;   
+               | returnStmt  
+               | whileStmt    
+               | block    
+glob_declaration    →   
+               | funDecl      
+               | varDecl ;    
+               | statement    
+local_declaration    →   
+               | varDecl ;    
+               | statement   
+returnStmt     → return ;
+               | return expr;  
 
-declaration    → varDecl
-               | statement ;
-block          → "{" declaration* "}" ;
+funDecl        → def NAME block  
+               | def NAME "{" local_declaration* "}"  
+        
+varDecl        → var NAME expr  
+               | var NAME  
+
+block          → "{" declaration* "}"    
