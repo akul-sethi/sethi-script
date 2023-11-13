@@ -4,13 +4,15 @@ Efficient, lightweight language with a novel form of types: Bounded Types.
 # Language Design
 
 # Grammar
+SethiScript is list of global_declaration  
+
 statement      → exprStmt ;  
                | ifStmt    
                | printStmt ;   
                | returnStmt  
                | whileStmt    
                | block    
-glob_declaration    →   
+global_declaration    →   
                | funDecl      
                | varDecl ;    
                | statement    
@@ -20,10 +22,9 @@ local_declaration    →
 returnStmt     → return ;
                | return expr;  
 
-funDecl        → def NAME block  
-               | def NAME "{" local_declaration* "}"  
+funDecl        → def NAME (NAME*) block    
         
-varDecl        → var NAME expr  
+varDecl        → var NAME = expr  
                | var NAME  
 
-block          → "{" declaration* "}"    
+block          → "{" local_declaration* "}"    
