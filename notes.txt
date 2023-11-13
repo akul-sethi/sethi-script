@@ -46,8 +46,12 @@ Control Flow:
         - If condition false, jump to end
 
 
-
+Functions:
+    - Fix return context
+    - Fix def context
+    - Add return statement to function if it does not have one.
+    - Fix where OP Codes are stored for function so repl works 
     
 
 TODO:
-check if strings are freed from memory
+

@@ -116,9 +116,11 @@ static void buildIdentifier(Token* token) {
         case 't': checkKeyword(token, "true", TOKEN_TRUE, 4); break;
         case 'n': checkKeyword(token, "nil", TOKEN_NIL, 3); break;
         case 'v': checkKeyword(token, "var", TOKEN_VAR, 3); break;
+        case 'd': checkKeyword(token, "def", TOKEN_DEF, 3); break;
         case 'e': checkKeyword(token, "else", TOKEN_ELSE, 4); break;
         case 'a': checkKeyword(token, "and", TOKEN_AND, 3); break;
         case 'o': checkKeyword(token, "or", TOKEN_OR, 2); break;
+        case 'r': checkKeyword(token, "return", TOKEN_RETURN, 6); break;
         case 'f': 
             switch (nextChar)
             {

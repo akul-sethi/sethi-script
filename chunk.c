@@ -32,6 +32,7 @@ void freeChunk(Chunk* chunk) {
     initChunk(chunk);
 }
 
+//Writes a constant to the constant pool and returns its index in the pool
 int addConstant(Chunk* chunk, Value val) {
     writeValueArray(&chunk->constants, val);
     return (chunk->constants).count - 1;

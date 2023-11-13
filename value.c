@@ -46,7 +46,10 @@ void printValue(Value val) {
         case VALUE_OBJ: 
             if(val.as.obj->type == OBJ_STRING) {
                 printf("%s", ((ObjString*) val.as.obj)->string);
-            } break;
+            } else {
+                printf("sc: %d, np: %d", ((ObjFunc*) val.as.obj)->startCount, ((ObjFunc*) val.as.obj)->numParams);
+            }
+            break;
         default: break;
 
     }
@@ -92,6 +95,19 @@ ObjString* copyString(const char* string, int length) {
     set(&vm.strings, heapObj, MAKE_NIL());
 
     return heapObj;
+ }
+
+//Creates a ObjFunc on the heap
+ ObjFunc* createFunc(int startCount, int numParams) {
+    ObjFunc* output = (ObjFunc*) malloc(sizeof(ObjFunc));
+
+    ((Obj*)output)->type = OBJ_FUNCTION;
+    ((Obj*)output)->next = vm.objects;
+    vm.objects = &output->obj;
+    output->startCount = startCount;
+    output->numParams = numParams;
+    
+    return output;
  }
 
 

@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 var x = 0;
 while(x < 100) {
     print x;
     x = x + 1;
 }
+=======
+def hello(hello) {
+    print hello;
+}
+
+hello("hey");
+>>>>>>> functions
