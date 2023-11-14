@@ -15,7 +15,8 @@ statement      → exprStmt ;
 global_declaration    →   
                | funDecl      
                | varDecl ;    
-               | statement    
+               | statement   
+               | structDecl  
 local_declaration    →   
                | varDecl ;    
                | statement   
@@ -27,4 +28,6 @@ funDecl        → def NAME (NAME*) block
 varDecl        → var NAME = expr  
                | var NAME  
 
-block          → "{" local_declaration* "}"    
+block          → "{" local_declaration* "}"   
+
+structDecl     → struct NAME(NAME*) "{" varDecl* "}" 

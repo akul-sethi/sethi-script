@@ -288,20 +288,6 @@ static InterpretResult run() {
 
 }
 
-static void freeObject(Obj* obj) {
-    ObjType type = obj->type;
-    switch (type)
-    {
-    case OBJ_STRING: {
-        ObjString* ptr = (ObjString*) obj;
-        free((void*)ptr->string);
-        free((void*)ptr);
-        break;
-    }
-    default:
-        break;
-    }
-}
 
 //Frees all objects from the heap as well as their associated strings.
 static void freeObjects() {

@@ -16,7 +16,6 @@ double = square + square
 print(square(4))
 print(double(4))
 
-def test(*args, **kwds):
-    print(*args)
+
 
 

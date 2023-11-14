@@ -103,6 +103,8 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_AND: return simpleInstruction("OP_AND", offset);
     case OP_OR: return simpleInstruction("OP_OR", offset);
     case OP_CALL: return callInstruction("OP_CALL", chunk, offset);
+    case OP_DOT: return simpleInstruction("OP_DOT", offset);
+    case OP_TABLE: return simpleInstruction("OP_TABLE", offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

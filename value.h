@@ -2,6 +2,9 @@
 #define sethi_value_h
 
 #include "common.h"
+// #include "table.h"
+
+typedef struct t Table;
 
 typedef enum {
     VALUE_NIL,
@@ -12,7 +15,8 @@ typedef enum {
 
 typedef enum {
     OBJ_STRING,
-    OBJ_FUNCTION
+    OBJ_FUNCTION,
+    OBJ_STRUCT
 } ObjType;
 
 typedef struct Obj Obj;
@@ -36,6 +40,14 @@ typedef struct {
     uint8_t numParams;
 } ObjFunc;
 
+//Represents a struct in SethiScript
+typedef struct {
+    Obj obj;
+    //Stores key-value pairs
+    Table* table;
+} ObjStruct;
+
+
 typedef struct {
     ValueType type;
     union {
@@ -51,6 +63,7 @@ typedef struct {
     Value* values;
 } ValueArray;
 
+void freeObject(Obj* obj);
 void initValueArray(ValueArray* arr);
 void writeValueArray(ValueArray* arr, Value val);
 void freeValueArray(ValueArray* arr);
@@ -59,6 +72,8 @@ bool isObjectOfType(Value val, ObjType type);
 ObjString* copyString(const char* string, int length);
 uint32_t hash(const char* string, int length);
 ObjFunc* createFunc(int startCount, int numParams);
+
+
 
 
 #define IS_NIL(value) (value.type==VALUE_NIL)

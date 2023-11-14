@@ -77,6 +77,8 @@ static void synchronize() {
             case TOKEN_FOR: return;
             case TOKEN_WHILE: return;
             case TOKEN_PRINT: return;
+            case TOKEN_STRUCT: return;
+            case TOKEN_DEF: return;
             case TOKEN_IF: return;
             case TOKEN_VAR: return;
             default: break;
@@ -494,16 +496,7 @@ static void definition(int index) {
     }
 }
 
-//Defines two empty placeholder locals for return address and frame bottom
-// static void createPlaceholders() {
-//     for(int i = 0; i < 2; i++) {
-//         Local newLocal;
-//         newLocal.token = (Token){.length = 0, .line = parser.previous.line, .start = parser.previous.start, .type = TOKEN_IDENTIFIER};
-//         newLocal.depth = current->currentScope;
-//         current->locals[current->localCount] = newLocal;
-//         current->localCount++;
-//     }
-// }
+
 
 //Parses parameters by having the compiler add locals and moving the parser so that it has the closing ')' in the previous slot.
 //Returns number of parameters
@@ -538,8 +531,8 @@ static int parseParameters() {
     return numParams;
 }
 
-//Compiles a function and creates a function object in the heap, and stores it in the vms table
-static void funcDeclaration() {
+//Creates a callable in the vms table. Returns the count value to be patched 
+static int createCallable() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
     ObjString* funcName = copyString(parser.previous.start, parser.previous.length);
    
@@ -552,6 +545,44 @@ static void funcDeclaration() {
     Value funcVal = (Value){.type=VALUE_OBJ, .as.obj= (Obj*)createFunc(currentChunk()->count, numParams)};
     
     set(&vm.table, funcName, funcVal);
+    return funcJumpCount;
+}
+
+//Compiles the function for constructor
+static void constructDeclaration() {
+    int funcJumpCount = createCallable();
+    consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
+
+    while(match(TOKEN_VAR)) {
+        varDeclaration();
+        Local last = current->locals[current->localCount - 1];
+        Value identifier = (Value){.type=VALUE_OBJ, .as.obj=(Obj*)copyString(last.token.start, last.token.length)};
+        int index = addConstant(currentChunk(), identifier);
+        emitBytes(OP_CONSTANT, index, parser.previous.line);
+    }
+
+    consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
+    emitBytes(OP_NIL, OP_RETURN, parser.previous.line);
+    exitBlock(false);
+}
+
+//Compiles the function for the predicate. Has form isNAME
+static void predDeclaration() {
+
+}
+
+//Compiles a struct; creates a constructor and predicate function in the heap; stores them in the vm table
+static void structDeclaration() {
+    consume(TOKEN_IDENTIFIER, "Expects identifier");
+    constructDeclaration();
+
+}
+
+
+
+//Compiles a function and creates a function object in the heap, and stores it in the vms table
+static void funcDeclaration() {
+    int funcJumpCount = createCallable();
   
     consume(TOKEN_LEFT_CURLY, "Expects '{' after function def");
     block();
@@ -624,6 +655,9 @@ void statement() {
 void globalDeclaration() {
     if(match(TOKEN_DEF)) {
         funcDeclaration();
+        if(parser.panicMode) synchronize();
+    } else if(match(TOKEN_STRUCT)) {
+        structDeclaration();
         if(parser.panicMode) synchronize();
     } else {
         localDeclaration();
