@@ -4,7 +4,7 @@ Efficient, lightweight language with a novel form of types: Bounded Types.
 # Language Design
 
 # Grammar
-SethiScript is list of global_declaration  
+A program is global_declaration*
 
 statement      → exprStmt ;  
                | ifStmt    

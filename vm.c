@@ -275,6 +275,13 @@ static InterpretResult run() {
 
             vm.ip = vm.chunk->code + func->startCount;
             break;
+        } 
+        case OP_TABLE: {
+            Value table = (Value){.type = VALUE_OBJ, .as.obj = (Obj*)createStruct()};
+            while(vm.stackTop > vm.stack + vm.frameBottom) {
+                
+            }
+            break;
         }
 
         default:
@@ -319,8 +326,8 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    // dissasembleChunk(&chunk, "Chunk");
-    InterpretResult result = run();
+    dissasembleChunk(&chunk, "Chunk");
+    // InterpretResult result = run();
 
     freeChunk(&chunk);
     return INTERPRET_OK;

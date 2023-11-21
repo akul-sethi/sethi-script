@@ -548,53 +548,6 @@ static int createCallable() {
     return funcJumpCount;
 }
 
-//Compiles the function for constructor
-static void constructDeclaration() {
-    int funcJumpCount = createCallable();
-    consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
-
-    while(match(TOKEN_VAR)) {
-        varDeclaration();
-        Local last = current->locals[current->localCount - 1];
-        Value identifier = (Value){.type=VALUE_OBJ, .as.obj=(Obj*)copyString(last.token.start, last.token.length)};
-        int index = addConstant(currentChunk(), identifier);
-        emitBytes(OP_CONSTANT, index, parser.previous.line);
-    }
-
-    consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
-    emitBytes(OP_NIL, OP_RETURN, parser.previous.line);
-    exitBlock(false);
-}
-
-//Compiles the function for the predicate. Has form isNAME
-static void predDeclaration() {
-
-}
-
-//Compiles a struct; creates a constructor and predicate function in the heap; stores them in the vm table
-static void structDeclaration() {
-    consume(TOKEN_IDENTIFIER, "Expects identifier");
-    constructDeclaration();
-
-}
-
-
-
-//Compiles a function and creates a function object in the heap, and stores it in the vms table
-static void funcDeclaration() {
-    int funcJumpCount = createCallable();
-  
-    consume(TOKEN_LEFT_CURLY, "Expects '{' after function def");
-    block();
-    //Default return
-    emitBytes(OP_NIL, OP_RETURN, parser.previous.line);
-    consume(TOKEN_RIGHT_CURLY, "Expects '}' after function body");
-
-    patchJump(funcJumpCount);
-    //Remove locals
-    exitBlock(false);
-}
-
 //Declares and defines local and global variables
 static void varDeclaration() {
     consume(TOKEN_IDENTIFIER, "Expect identifier");
@@ -630,6 +583,55 @@ static void varDeclaration() {
     consume(TOKEN_SEMI, "Expected semicolon");
    
 }
+
+//Compiles the function for constructor
+static void constructDeclaration() {
+    int funcJumpCount = createCallable();
+    consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
+
+    while(match(TOKEN_VAR)) {
+        varDeclaration();
+        Local last = current->locals[current->localCount - 1];
+        Value identifier = (Value){.type=VALUE_OBJ, .as.obj=(Obj*)copyString(last.token.start, last.token.length)};
+        int index = addConstant(currentChunk(), identifier);
+        emitBytes(OP_CONSTANT, index, parser.previous.line);
+    }
+
+    consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
+    emitBytes(OP_TABLE, OP_RETURN, parser.previous.line);
+    exitBlock(false);
+    patchJump(funcJumpCount);
+}
+
+//Compiles the function for the predicate. Has form isNAME
+static void predDeclaration() {
+
+}
+
+//Compiles a struct; creates a constructor and predicate function in the heap; stores them in the vm table
+static void structDeclaration() {
+    constructDeclaration();
+
+}
+
+
+
+//Compiles a function and creates a function object in the heap, and stores it in the vms table
+static void funcDeclaration() {
+    int funcJumpCount = createCallable();
+  
+    consume(TOKEN_LEFT_CURLY, "Expects '{' after function def");
+    block();
+    //Default return
+    emitBytes(OP_NIL, OP_RETURN, parser.previous.line);
+    consume(TOKEN_RIGHT_CURLY, "Expects '}' after function body");
+
+    patchJump(funcJumpCount);
+    //Remove locals
+    exitBlock(false);
+}
+
+
 
 
 void statement() {

@@ -1,24 +1,6 @@
-def fib(x) {
-    if (x == 0) {
-        return 0;
-    }
-    if (x  == 1) {
-        return 1;
-    }
-
-    return fib(x - 1) + fib(x - 2);
+struct hey(gey, u) {
+    var y;
+    var z = u;
+    var x = 10;
+    var c = x;
 }
-
-def printer(x) {
-    print x;
-    return;
-}
-
-def functionCaller(func, param) {
-    func(param);
-    return;
-}
-
-var x = 
-
-functionCaller(printer, 10);

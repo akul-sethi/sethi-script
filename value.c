@@ -41,7 +41,7 @@ void freeObject(Obj* obj) {
     } 
     case OBJ_STRUCT: {
          ObjStruct* ptr = (ObjStruct*) obj;
-         freeTable(&ptr->table);
+         freeTable(&(ptr->table));
          free((void*)ptr);
     }
     default:
@@ -134,6 +134,18 @@ ObjString* copyString(const char* string, int length) {
     output->startCount = startCount;
     output->numParams = numParams;
     
+    return output;
+ }
+
+ //Creates a Table on the heap
+ ObjStruct* createStruct() {
+    ObjStruct* output = (ObjStruct*) malloc(sizeof(ObjStruct));
+
+    output->obj.type = OBJ_STRUCT;
+    output->obj.next = vm.objects;
+    vm.objects = &output->obj;
+
+    initTable(&output->table);
     return output;
  }
 

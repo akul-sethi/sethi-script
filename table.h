@@ -16,6 +16,14 @@ typedef struct {
   Entry* entries;
 } Table;
 
+
+//Represents a struct in SethiScript
+typedef struct {
+    Obj obj;
+    //Stores key-value pairs
+    Table table;
+} ObjStruct;
+
 void initTable(Table* table);
 Value* get(Table* table, ObjString* key);
 void set(Table* table, ObjString* key, Value value);

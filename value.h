@@ -4,8 +4,6 @@
 #include "common.h"
 // #include "table.h"
 
-typedef struct t Table;
-
 typedef enum {
     VALUE_NIL,
     VALUE_NUM,
@@ -20,6 +18,7 @@ typedef enum {
 } ObjType;
 
 typedef struct Obj Obj;
+typedef struct ObjStruct ObjStruct;
 
  struct Obj {
    ObjType type;
@@ -40,12 +39,6 @@ typedef struct {
     uint8_t numParams;
 } ObjFunc;
 
-//Represents a struct in SethiScript
-typedef struct {
-    Obj obj;
-    //Stores key-value pairs
-    Table* table;
-} ObjStruct;
 
 
 typedef struct {
@@ -72,6 +65,7 @@ bool isObjectOfType(Value val, ObjType type);
 ObjString* copyString(const char* string, int length);
 uint32_t hash(const char* string, int length);
 ObjFunc* createFunc(int startCount, int numParams);
+ObjStruct* createStruct();
 
 
 
