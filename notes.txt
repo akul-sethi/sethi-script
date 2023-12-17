@@ -56,4 +56,9 @@ Functions:
 
 TODO:
 -Fix debugging 
+-Fix scoppings in struct constructor
+-Fix variable usage
+-Add types
+-Add system calls 
+-Fix functions to not be in same chunk
 
