@@ -1,6 +1,5 @@
-struct hey(gey, u) {
-    var y;
-    var z = u;
-    var x = 10;
-    var c = x;
+struct Hello(balls) {
+  var x = 7;
+  var y = balls;
 }
+Hello(5);

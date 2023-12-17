@@ -588,9 +588,10 @@ static void varDeclaration() {
 static void constructDeclaration() {
     int funcJumpCount = createCallable();
     consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
-
+    uint8_t fields = 0;
     while(match(TOKEN_VAR)) {
         varDeclaration();
+        fields += 1;
         Local last = current->locals[current->localCount - 1];
         Value identifier = (Value){.type=VALUE_OBJ, .as.obj=(Obj*)copyString(last.token.start, last.token.length)};
         int index = addConstant(currentChunk(), identifier);
@@ -598,7 +599,8 @@ static void constructDeclaration() {
     }
 
     consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
-    emitBytes(OP_TABLE, OP_RETURN, parser.previous.line);
+    emitBytes(OP_TABLE, fields, parser.previous.line);
+    emitByte(OP_RETURN, parser.previous.line);
     exitBlock(false);
     patchJump(funcJumpCount);
 }

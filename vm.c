@@ -276,13 +276,17 @@ static InterpretResult run() {
             vm.ip = vm.chunk->code + func->startCount;
             break;
         } 
-        case OP_TABLE: {
-            Value table = (Value){.type = VALUE_OBJ, .as.obj = (Obj*)createStruct()};
-            while(vm.stackTop > vm.stack + vm.frameBottom) {
-                
-            }
-            break;
-        }
+         case OP_TABLE: {
+           uint8_t fields = READ_BYTE();
+           Value table = (Value){.type = VALUE_OBJ, .as.obj = (Obj*)createStruct()};
+           for (int i = fields; i > 0; i--) {
+             Value top = pop();
+             Value next = pop();
+             set(&((ObjStruct*)table.as.obj)->table, (ObjString*)top.as.obj, next);
+           }
+           push(table);
+           break;
+       }
 
         default:
             return INTERPRET_RUNTIME_ERROR;
@@ -326,8 +330,8 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = chunk.code;
 
-    dissasembleChunk(&chunk, "Chunk");
-    // InterpretResult result = run();
+     dissasembleChunk(&chunk, "Chunk");
+    InterpretResult result = run();
 
     freeChunk(&chunk);
     return INTERPRET_OK;

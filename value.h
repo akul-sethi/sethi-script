@@ -2,7 +2,6 @@
 #define sethi_value_h
 
 #include "common.h"
-// #include "table.h"
 
 typedef enum {
     VALUE_NIL,
@@ -18,7 +17,6 @@ typedef enum {
 } ObjType;
 
 typedef struct Obj Obj;
-typedef struct ObjStruct ObjStruct;
 
  struct Obj {
    ObjType type;
@@ -65,7 +63,6 @@ bool isObjectOfType(Value val, ObjType type);
 ObjString* copyString(const char* string, int length);
 uint32_t hash(const char* string, int length);
 ObjFunc* createFunc(int startCount, int numParams);
-ObjStruct* createStruct();
 
 
 
