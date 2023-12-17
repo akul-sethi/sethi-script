@@ -1,17 +1,10 @@
-struct Cons(f, r) {
-  var first = f;
+struct Cons(first, r) {
+  var first = first;
   var rest = r;
+  var other = rest;
 }
 
 var list = Cons(1, Cons(2, Cons(3, nil)));
 
-def printList(list){
-  if(list == nil) {
-    return;
-  }
-
-  print list.first;
-  printList(list.rest);
-}
-
-printList(list);
+print list.rest.first;
+print list.other.rest;

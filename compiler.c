@@ -152,6 +152,12 @@ static void statement();
 static void globalDeclaration();
 static void localDeclaration();
 
+//Add local to compiler
+static void addLocal(Local local) {
+  current->locals[current->localCount] = local;
+  current->localCount++;
+}
+
 //What to do when entering block
 static void enterBlock() {
    current->currentScope++;
@@ -531,8 +537,7 @@ static int parseParameters() {
                 return 0;
             }
         }
-        current->locals[current->localCount] = newLocal;
-        current->localCount++;
+        addLocal(newLocal);
         if(match(TOKEN_RIGHT_PAREN)) {
             break;
         }
@@ -578,8 +583,7 @@ static void varDeclaration() {
                 return;
             }
         }
-        current->locals[current->localCount] = newLocal;
-        current->localCount++;
+        addLocal(newLocal);
     } else {
         //Creates string for global variable (part of defining; put here for succictness)
         index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*) copyString(parser.previous.start, parser.previous.length)});
@@ -599,6 +603,7 @@ static void varDeclaration() {
 static void constructDeclaration() {
     int funcJumpCount = createCallable();
     consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
+    enterBlock();
     uint8_t fields = 0;
     while(match(TOKEN_VAR)) {
         varDeclaration();
@@ -607,11 +612,16 @@ static void constructDeclaration() {
         Value identifier = (Value){.type=VALUE_OBJ, .as.obj=(Obj*)copyString(last.token.start, last.token.length)};
         int index = addConstant(currentChunk(), identifier);
         emitBytes(OP_CONSTANT, index, parser.previous.line);
+        Local empty;
+        empty.depth = current->currentScope;
+        empty.token = (Token){.type=TOKEN_IDENTIFIER, .start="", 0, parser.previous.line};
+        addLocal(empty);
     }
 
     consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
     emitBytes(OP_TABLE, fields, parser.previous.line);
     emitByte(OP_RETURN, parser.previous.line);
+    exitBlock(false);
     exitBlock(false);
     patchJump(funcJumpCount);
 }
