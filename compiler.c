@@ -387,13 +387,24 @@ static void or_(bool canAssign) {
     patchJump(jumpTheSecondPartCount);
 }
 
+//Parses dot expressions 
+static void namespace(bool canAssign) {
+  if(match(TOKEN_IDENTIFIER)) {
+    int index = addConstant(compilingChunk, (Value){.type = VALUE_OBJ, .as.obj = (Obj*)copyString(parser.previous.start,
+        parser.previous.length)});
+    emitBytes(OP_NAMESPACE, index, parser.previous.line);
+  } else {
+    errorAtToken(&parser.current, "Must be an identifer");
+  }
+}
+
  ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_CALL},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_CURLY] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_CURLY] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
-    [TOKEN_DOT] = {NULL, NULL, PREC_NONE},
+    [TOKEN_DOT] = {NULL, namespace, PREC_PRIMARY},
     [TOKEN_SEMI] = {NULL, NULL, PREC_NONE},
     [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
     [TOKEN_MINUS] = {unary, binary, PREC_TERM},

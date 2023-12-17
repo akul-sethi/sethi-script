@@ -286,7 +286,21 @@ static InterpretResult run() {
            }
            push(table);
            break;
-       }
+       } 
+        case OP_NAMESPACE: {
+          Value top = pop();
+          if(!IS_OBJ(top) || top.as.obj->type != OBJ_STRUCT) {
+            return runtimeError("Must be struct to access field");
+          }
+          ObjString* key = (ObjString*)READ_CONSTANT().as.obj;
+          Value* val = get(&GET_TABLE(top), key);
+
+          if(val == NULL) {
+            return runtimeError("Struct does not have given key");
+          }
+          push(*val);
+          break;
+        }
 
         default:
             return INTERPRET_RUNTIME_ERROR;

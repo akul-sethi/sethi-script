@@ -114,6 +114,7 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_CALL: return callInstruction("OP_CALL", chunk, offset);
     case OP_DOT: return simpleInstruction("OP_DOT", offset);
     case OP_TABLE: return tableInstruction("OP_TABLE", chunk, offset);
+    case OP_NAMESPACE: return constantInstruction("OP_NAMESPACE", chunk, offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

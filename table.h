@@ -32,4 +32,6 @@ void freeTable(Table* table);
 ObjString* findStringInTable(Table* table, const char* string, int length, uint32_t hash);
 ObjStruct* createStruct();
 
+#define GET_TABLE(struct) (((ObjStruct*)struct.as.obj)->table)
+
 #endif

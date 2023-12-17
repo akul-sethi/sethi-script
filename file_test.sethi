@@ -1,5 +1,17 @@
-struct Hello(balls) {
-  var x = 7;
-  var y = balls;
+struct Cons(f, r) {
+  var first = f;
+  var rest = r;
 }
-Hello(5);
+
+var list = Cons(1, Cons(2, Cons(3, nil)));
+
+def printList(list){
+  if(list == nil) {
+    return;
+  }
+
+  print list.first;
+  printList(list.rest);
+}
+
+printList(list);
