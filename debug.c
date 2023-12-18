@@ -54,6 +54,15 @@ static int callInstruction(const char* name, Chunk* chunk, int offset) {
     printf("%4d", index);
     return offset + 2;
 }
+
+//Prints instruction for table with a 1 byte operand representing number of fields
+static int tableInstruction(const char* name, Chunk* chunk, int offset) {
+  printf("%s  ", name);
+  int fields = chunk->code[offset + 1];
+  printf("Num fields: ");
+  printf("%u", fields);
+  return offset + 2;
+}
  
 
 // static int globalInstruction(const char* name, Chunk* chunk, int offset) {
@@ -103,6 +112,9 @@ int dissasembleInstruction(Chunk* chunk, int offset) {
     case OP_AND: return simpleInstruction("OP_AND", offset);
     case OP_OR: return simpleInstruction("OP_OR", offset);
     case OP_CALL: return callInstruction("OP_CALL", chunk, offset);
+    case OP_DOT: return simpleInstruction("OP_DOT", offset);
+    case OP_TABLE: return tableInstruction("OP_TABLE", chunk, offset);
+    case OP_NAMESPACE: return constantInstruction("OP_NAMESPACE", chunk, offset);
     default:   
         printf("Cannot recognize code: %d\n", code);
         return offset + 1;

@@ -1,38 +1,43 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-var x = 0;
-while(x < 100) {
-    print x;
-    x = x + 1;
-}
-=======
-def hello(hello) {
-    print hello;
+struct Cons(first, r) {
+  var first = first;
+  var rest = r;
 }
 
-hello("hey");
->>>>>>> functions
-=======
-def fib(x) {
-    if (x == 0) {
-        return 0;
-    }
-    if (x  == 1) {
-        return 1;
+def make(a, b, c, d, e, f, g) {
+    return Cons(a, Cons(b, Cons(c, Cons(d, Cons(e, Cons(f, Cons(g, nil)))))));
+}
+
+def printList(list) {
+    if(list == nil) {
+        return;
     }
 
-    return fib(x - 1) + fib(x - 2);
+    print list.first;
+    printList(list.rest);
 }
 
-def printer(x) {
-    print x;
-    return;
+def insert(list, element) {
+  if(list == nil) {
+      return Cons(element, nil);
+  }
+
+  if(list.first < element) {
+      return Cons(list.first, insert(list.rest, element));
+  } else {
+      return Cons(element, list);
+  }
+}
+def sort(list) {
+  if(list == nil) {
+      return list;
+  }
+
+  return insert(sort(list.rest), list.first);
 }
 
-def functionCaller(func, param) {
-    func(param);
-    return;
-}
+var unsorted = make(2, 1, 4, 3, 6, 2, 5);
+var sorted = sort(unsorted);
 
-functionCaller(printer, 10);
->>>>>>> functions
+printList(unsorted);
+print "----------";
+printList(sorted);

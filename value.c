@@ -24,6 +24,31 @@ void writeValueArray(ValueArray* arr, Value val) {
     arr->count++;
 }
 
+void freeObject(Obj* obj) {
+    ObjType type = obj->type;
+    switch (type)
+    {
+    case OBJ_STRING: {
+        ObjString* ptr = (ObjString*) obj;
+        free((void*)ptr->string);
+        free((void*)ptr);
+        break;
+    } 
+    case OBJ_FUNCTION: {
+        ObjFunc* ptr = (ObjFunc*) obj;
+        free((void*)ptr);
+        break;
+    } 
+    case OBJ_STRUCT: {
+         ObjStruct* ptr = (ObjStruct*) obj;
+         freeTable(&(ptr->table));
+         free((void*)ptr);
+    }
+    default:
+        break;
+    }
+}
+
 void freeValueArray(ValueArray* arr) {
     FREE_ARRAY(Value, arr->values, arr->count);
     initValueArray(arr);
@@ -44,15 +69,17 @@ void printValue(Value val) {
             break;
         }
         case VALUE_OBJ: 
-            if(val.as.obj->type == OBJ_STRING) {
-                printf("%s", ((ObjString*) val.as.obj)->string);
-            } else {
-                printf("sc: %d, np: %d", ((ObjFunc*) val.as.obj)->startCount, ((ObjFunc*) val.as.obj)->numParams);
+            switch (val.as.obj->type)
+            {
+            case OBJ_STRING: printf("%s", ((ObjString*) val.as.obj)->string); break;
+            case OBJ_STRUCT: printf("num vals: %d", ((ObjStruct*) val.as.obj)->table.count); break;
+            case OBJ_FUNCTION: printf("sc: %d, np: %d", ((ObjFunc*) val.as.obj)->startCount, ((ObjFunc*) val.as.obj)->numParams); break;
+            default:
+                break;
             }
-            break;
         default: break;
-
     }
+        
 }
 
 bool isObjectOfType(Value val, ObjType type) {
@@ -110,5 +137,19 @@ ObjString* copyString(const char* string, int length) {
     return output;
  }
 
-
-
+char* typeName(Value val) {
+  switch (val.type) {
+    case VALUE_BOOL: return "Boolean";
+    case VALUE_NIL: return "Nil"; 
+    case VALUE_NUM: return "Number"; 
+    case VALUE_OBJ: {
+      switch(val.as.obj->type) {
+        case OBJ_STRING: return "String";
+        case OBJ_FUNCTION: return "Function Object";
+        case OBJ_STRUCT: return "Struct";
+        default: return "Unknown Object";
+      }
+    } 
+    default: return "Unknown";
+  }
+}

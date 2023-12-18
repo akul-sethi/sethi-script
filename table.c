@@ -3,6 +3,7 @@
 #include "string.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "vm.h"
 
 #define LOAD_FACTOR 0.75
 
@@ -98,5 +99,15 @@ ObjString* findStringInTable(Table* table, const char* string, int length, uint3
     
 }
 
+ //Creates a Table on the heap
+ ObjStruct* createStruct() {
+    ObjStruct* output = (ObjStruct*) malloc(sizeof(ObjStruct));
 
+    output->obj.type = OBJ_STRUCT;
+    output->obj.next = vm.objects;
+    vm.objects = &output->obj;
+
+    initTable(&output->table);
+    return output;
+ }
 

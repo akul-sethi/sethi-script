@@ -121,6 +121,7 @@ static void buildIdentifier(Token* token) {
         case 'a': checkKeyword(token, "and", TOKEN_AND, 3); break;
         case 'o': checkKeyword(token, "or", TOKEN_OR, 2); break;
         case 'r': checkKeyword(token, "return", TOKEN_RETURN, 6); break;
+        case 's': checkKeyword(token, "struct", TOKEN_STRUCT, 6); break;
         case 'f': 
             switch (nextChar)
             {

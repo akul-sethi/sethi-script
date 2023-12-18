@@ -51,7 +51,14 @@ Functions:
     - Fix def context
     - Add return statement to function if it does not have one.
     - Fix where OP Codes are stored for function so repl works 
+    - Fix struct locals
     
 
 TODO:
+-Fix debugging 
+-Fix scoppings in struct constructor
+-Fix variable usage
+-Add types
+-Add system calls 
+-Fix functions to not be in same chunk
 

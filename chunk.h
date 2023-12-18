@@ -34,7 +34,10 @@ typedef enum {
     OP_JUMP_BACK,
     OP_AND,
     OP_OR,
-    OP_CALL
+    OP_CALL,
+    OP_DOT,
+    OP_TABLE,
+    OP_NAMESPACE
 } OpCode;
 
 typedef struct {
