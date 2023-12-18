@@ -6,6 +6,7 @@
 #include "value.h"
 #include "string.h"
 #include <stdlib.h>
+#include <stdarg.h>
 
 
 VM vm;
@@ -41,9 +42,18 @@ Value peek(int distance) {
 
 //Returns a INTERPRET_RUNETIME_ERROR and print the given message, indicating the current line the program is at.
 //Adds new line
-InterpretResult runtimeError(const char* message) {
+InterpretResult runtimeError(const char* message, ...) {
     int line = vm.chunk->lines[vm.ip - vm.chunk->code];
-    printf("Error at line %d, %s\n", line, message);
+    printf("Error at line %d: ", line);
+    
+    va_list args;
+
+    va_start(args, message);
+    vprintf(message, args);
+    va_end(args);
+
+    printf("\n");
+
     return INTERPRET_RUNTIME_ERROR;
 }
 
@@ -75,7 +85,7 @@ static InterpretResult run() {
     #define READ_JUMP() ((((uint16_t)*vm.ip++) << 8) + *vm.ip++)
     #define BINARY_OP(op) do { \
         if(peek(1).type != VALUE_NUM || peek(2).type != VALUE_NUM) { \
-            return runtimeError("Can not operate on these types"); \
+            return runtimeError("Can not operate on these types: %s and %s", typeName(peek(1)), typeName(peek(2))); \
         } \
         Value b = pop(); \
         Value a = pop(); \
@@ -84,7 +94,7 @@ static InterpretResult run() {
     } while(false);
     #define COMP_OP(op) do {\
         if(peek(1).type != VALUE_NUM || peek(2).type != VALUE_NUM) {\
-            return runtimeError("Can not operate on these types"); \
+            return runtimeError("Can not operate on these types: %s and %s", typeName(peek(1)), typeName(peek(2))); \
         }\
         Value b = pop(); \
         Value a = pop(); \
@@ -128,7 +138,7 @@ static InterpretResult run() {
         }
         case OP_NEGATE:
             if(!IS_NUM(peek(1))) {
-                return runtimeError("Can only negate number");
+                return runtimeError("Cannot negate: %s, only Number", typeName(peek(1)));
             } 
             push(pop());
             break;
@@ -176,7 +186,7 @@ static InterpretResult run() {
         }
         case OP_FALSIFY: 
             if(peek(1).type != VALUE_BOOL) {
-                return runtimeError("Can only falsify booleans");
+                return runtimeError("Cannot falsify %s, only booleans", typeName(peek(1)));
             }
             push(MAKE_BOOL((!pop().as.boolean)));
             break;
@@ -194,7 +204,7 @@ static InterpretResult run() {
         case OP_SET_GLOB: {
             ObjString* s = (ObjString*)READ_CONSTANT().as.obj;
             if(get(&vm.table, s) == NULL) {
-                return runtimeError("Global variable is not defined");
+                return runtimeError("Global variable, %s, is not defined", s->string);
             }
             set(&vm.table, s, peek(1));
         
@@ -204,7 +214,7 @@ static InterpretResult run() {
             ObjString* s =(ObjString*)READ_CONSTANT().as.obj;
             Value* val = get(&vm.table, s);
             if(val == NULL) {
-                return runtimeError("Global variable has not been defined");
+               return runtimeError("Global variable, %s, is not defined", s->string);
             } else {
                 push(*val);
             }
@@ -254,7 +264,7 @@ static InterpretResult run() {
         case OP_CALL: {
             Value last = pop();
             if(last.type != VALUE_OBJ || last.as.obj->type != OBJ_FUNCTION) {
-                runtimeError("Value is not callable");
+                return runtimeError("Value type, %s, is not callable. Must be function object.", typeName(last));
             }
             ObjFunc* func = (ObjFunc*)last.as.obj;
             //Patch placeholders
@@ -264,7 +274,7 @@ static InterpretResult run() {
                 for(int i = 0; i < numActualParams + 2; i++) {
                     pop();
                 }
-                return runtimeError("Invalid number of parameters");
+                return runtimeError("Invalid number of parameters. Expecting %u got %u", func->numParams, numActualParams);
             }
             int currentCount = vm.ip - vm.chunk->code;
             *(vm.stackTop - numActualParams -1) = (Value) {.type = VALUE_NUM, .as.number = vm.frameBottom};
@@ -289,15 +299,18 @@ static InterpretResult run() {
        } 
         case OP_NAMESPACE: {
           Value top = pop();
+
           if(!IS_OBJ(top) || top.as.obj->type != OBJ_STRUCT) {
-            return runtimeError("Must be struct to access field");
+            return runtimeError("Cannot access field of type %s. Must be a struct", typeName(top));
           }
+
           ObjString* key = (ObjString*)READ_CONSTANT().as.obj;
           Value* val = get(&GET_TABLE(top), key);
 
           if(val == NULL) {
-            return runtimeError("Struct does not have given key");
+            return runtimeError("Struct does not have key: %s", key->string);
           }
+
           push(*val);
           break;
         }

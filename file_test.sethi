@@ -1,10 +1,43 @@
 struct Cons(first, r) {
   var first = first;
   var rest = r;
-  var other = rest;
 }
 
-var list = Cons(1, Cons(2, Cons(3, nil)));
+def make(a, b, c, d, e, f, g) {
+    return Cons(a, Cons(b, Cons(c, Cons(d, Cons(e, Cons(f, Cons(g, nil)))))));
+}
 
-print list.rest.first;
-print list.other.rest;
+def printList(list) {
+    if(list == nil) {
+        return;
+    }
+
+    print list.first;
+    printList(list.rest);
+}
+
+def insert(list, element) {
+  if(list == nil) {
+      return Cons(element, nil);
+  }
+
+  if(list.first < element) {
+      return Cons(list.first, insert(list.rest, element));
+  } else {
+      return Cons(element, list);
+  }
+}
+def sort(list) {
+  if(list == nil) {
+      return list;
+  }
+
+  return insert(sort(list.rest), list.first);
+}
+
+var unsorted = make(2, 1, 4, 3, 6, 2, 5);
+var sorted = sort(unsorted);
+
+printList(unsorted);
+print "----------";
+printList(sorted);

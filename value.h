@@ -63,7 +63,7 @@ bool isObjectOfType(Value val, ObjType type);
 ObjString* copyString(const char* string, int length);
 uint32_t hash(const char* string, int length);
 ObjFunc* createFunc(int startCount, int numParams);
-
+char* typeName(Value val);
 
 
 

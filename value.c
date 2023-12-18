@@ -137,3 +137,19 @@ ObjString* copyString(const char* string, int length) {
     return output;
  }
 
+char* typeName(Value val) {
+  switch (val.type) {
+    case VALUE_BOOL: return "Boolean";
+    case VALUE_NIL: return "Nil"; 
+    case VALUE_NUM: return "Number"; 
+    case VALUE_OBJ: {
+      switch(val.as.obj->type) {
+        case OBJ_STRING: return "String";
+        case OBJ_FUNCTION: return "Function Object";
+        case OBJ_STRUCT: return "Struct";
+        default: return "Unknown Object";
+      }
+    } 
+    default: return "Unknown";
+  }
+}
