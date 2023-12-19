@@ -37,7 +37,8 @@ typedef enum {
   OP_CALL,
   OP_DOT,
   OP_TABLE,
-  OP_NAMESPACE
+  OP_NAMESPACE,
+  OP_TYPE
 } OpCode;
 
 typedef struct Chunk {

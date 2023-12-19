@@ -1,6 +1,8 @@
 #include "vm.h"
 #include "compiler.h"
+#include "debug.h"
 #include "string.h"
+#include "table.h"
 #include "value.h"
 #include <stdarg.h>
 #include <stdint.h>
@@ -328,7 +330,10 @@ static InterpretResult run() {
     }
     case OP_TABLE: {
       uint8_t fields = READ_BYTE();
-      Value table = (Value){.type = VALUE_OBJ, .as.obj = (Obj *)createStruct()};
+      Value type = READ_CONSTANT();
+      Value table =
+          (Value){.type = VALUE_OBJ,
+                  .as.obj = (Obj *)createStruct((ObjString *)type.as.obj)};
       for (int i = fields; i > 0; i--) {
         Value top = pop();
         Value next = pop();
@@ -353,6 +358,16 @@ static InterpretResult run() {
       }
 
       push(*val);
+      break;
+    }
+    case OP_TYPE: {
+      Value top = pop();
+      if (top.type != VALUE_OBJ || top.as.obj->type != OBJ_STRUCT) {
+        push(MAKE_BOOL(false));
+        break;
+      }
+      ObjStruct *s = (ObjStruct *)top.as.obj;
+      push((Value){.type = VALUE_OBJ, .as.obj = (Obj *)s->type});
       break;
     }
 

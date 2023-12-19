@@ -1,4 +1,5 @@
 #include "value.h"
+#include "chunk.h"
 #include "memory.h"
 #include "table.h"
 #include "vm.h"
@@ -34,12 +35,14 @@ void freeObject(Obj *obj) {
   }
   case OBJ_FUNCTION: {
     ObjFunc *ptr = (ObjFunc *)obj;
+    freeChunk(ptr->chunk);
     free((void *)ptr);
     break;
   }
   case OBJ_STRUCT: {
     ObjStruct *ptr = (ObjStruct *)obj;
     freeTable(&(ptr->table));
+    freeObject((Obj *)ptr->type);
     free((void *)ptr);
   }
   default:
@@ -72,10 +75,10 @@ void printValue(Value val) {
       printf("%s", ((ObjString *)val.as.obj)->string);
       break;
     case OBJ_STRUCT:
-      printf("num vals: %d", ((ObjStruct *)val.as.obj)->table.count);
+      printf("<%s>", ((ObjStruct *)val.as.obj)->type->string);
       break;
     case OBJ_FUNCTION:
-      printf("num params: %d", ((ObjFunc *)val.as.obj)->numParams);
+      printf("function: %d params", ((ObjFunc *)val.as.obj)->numParams);
       break;
     default:
       break;

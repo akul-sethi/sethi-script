@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 
 #include "chunk.h"
@@ -5,6 +6,8 @@
 #include "compiler.h"
 #include "debug.h"
 #include "scanner.h"
+#include "table.h"
+#include "value.h"
 #include "vm.h"
 #include <stdlib.h>
 #include <string.h>
@@ -584,22 +587,29 @@ static int parseParameters() {
   return numParams;
 }
 
-// Creates a callable in the vms table. Creates a new chunk and sets the
-// compiling one to this.
-static void createCallable() {
-  consume(TOKEN_IDENTIFIER, "Expect identifier");
-  ObjString *funcName =
-      copyString(parser.previous.start, parser.previous.length);
+// Creates callable with name and number of params
+static void createNamedCallable(ObjString *name, int numParams) {
 
   Chunk *chunk = (Chunk *)malloc(sizeof(Chunk));
+  initChunk(chunk);
   setCurrentChunk(chunk);
-
-  int numParams = parseParameters();
 
   Value funcVal =
       (Value){.type = VALUE_OBJ, .as.obj = (Obj *)createFunc(chunk, numParams)};
 
-  set(&vm.table, funcName, funcVal);
+  set(&vm.table, name, funcVal);
+}
+
+// Creates a callable in the vms table. Creates a new chunk and sets the
+// compiling one to this. Returns name of function
+static ObjString *createCallable() {
+  consume(TOKEN_IDENTIFIER, "Expect identifier");
+  ObjString *funcName =
+      copyString(parser.previous.start, parser.previous.length);
+
+  int numParams = parseParameters();
+  createNamedCallable(funcName, numParams);
+  return funcName;
 }
 
 // Declares and defines local and global variables
@@ -642,9 +652,36 @@ static void varDeclaration() {
   consume(TOKEN_SEMI, "Expected semicolon");
 }
 
+// Compiles the function for the predicate. Has form isNAME
+static void predDeclaration(ObjString *type) {
+  char *heapStr = (char *)malloc(type->length + 2);
+
+  heapStr[0] = 'i';
+  heapStr[1] = 's';
+
+  memcpy(heapStr + 2, type->string, type->length);
+  ObjString *pred = copyString(heapStr, type->length + 2);
+
+  free(heapStr);
+  createNamedCallable(pred, 1);
+
+  uint8_t index = addConstant(
+      currentChunk(), (Value){.type = VALUE_OBJ, .as.obj = (Obj *)type});
+  emitByte(OP_TYPE, parser.previous.line);
+  emitByte(OP_CONSTANT, parser.previous.line);
+  emitByte(index, parser.previous.line);
+  emitByte(OP_EQUALITY, parser.previous.line);
+  emitByte(OP_RETURN, parser.previous.line);
+
+  setCurrentChunk(mainChunk);
+}
+
+// Compiles a struct; creates a constructor and predicate function in the heap;
+// stores them in the vm table
 // Compiles the function for constructor
-static void constructDeclaration() {
-  createCallable();
+static void structDeclaration() {
+  ObjString *type = createCallable();
+
   consume(TOKEN_LEFT_CURLY, "Needs '{' after function def");
   enterBlock();
   uint8_t fields = 0;
@@ -666,18 +703,15 @@ static void constructDeclaration() {
 
   consume(TOKEN_RIGHT_CURLY, "Needs '}' to close the function");
   emitBytes(OP_TABLE, fields, parser.previous.line);
-  emitByte(OP_RETURN, parser.previous.line);
+  int index = addConstant(currentChunk(),
+                          (Value){.type = VALUE_OBJ, .as.obj = (Obj *)type});
+  emitBytes(index, OP_RETURN, parser.previous.line);
   exitBlock(false);
   exitBlock(false);
   setCurrentChunk(mainChunk);
+
+  predDeclaration(type);
 }
-
-// Compiles the function for the predicate. Has form isNAME
-static void predDeclaration() {}
-
-// Compiles a struct; creates a constructor and predicate function in the heap;
-// stores them in the vm table
-static void structDeclaration() { constructDeclaration(); }
 
 // Compiles a function and creates a function object in the heap, and stores it
 // in the vms table
