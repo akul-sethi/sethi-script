@@ -1,10 +1,9 @@
 #include "vm.h"
-#include "common.h"
 #include "compiler.h"
-#include "debug.h"
 #include "string.h"
 #include "value.h"
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -123,11 +122,13 @@ static InterpretResult run() {
         return INTERPRET_OK;
       }
       Value returnVal = pop();
-      vm.ip = vm.chunk->code + vm.returnCount;
+      vm.ip = vm.returnIp;
       vm.stackTop = vm.stack + vm.frameBottom;
 
       vm.frameBottom = pop().as.number;
-      vm.returnCount = pop().as.number;
+      vm.returnIp = (uint8_t *)pop().as.obj;
+      vm.chunk = (Chunk *)pop().as.obj;
+
       push(returnVal);
       break;
     }
@@ -300,10 +301,10 @@ static InterpretResult run() {
       }
       ObjFunc *func = (ObjFunc *)last.as.obj;
       // Patch placeholders
-      // Frame bottom on top of return address
+      // Frame bottom on top of return address on top of current chunk
       uint8_t numActualParams = READ_BYTE();
       if (func->numParams != numActualParams) {
-        for (int i = 0; i < numActualParams + 2; i++) {
+        for (int i = 0; i < numActualParams + 3; i++) {
           pop();
         }
         return runtimeError("Invalid number of parameters. Expecting %u got %u",
@@ -313,13 +314,16 @@ static InterpretResult run() {
       *(vm.stackTop - numActualParams - 1) =
           (Value){.type = VALUE_NUM, .as.number = vm.frameBottom};
       *(vm.stackTop - numActualParams - 2) =
-          (Value){.type = VALUE_NUM, .as.number = vm.returnCount};
+          (Value){.type = VALUE_OBJ, .as.obj = (Obj *)vm.returnIp};
+      *(vm.stackTop - numActualParams - 3) =
+          (Value){.type = VALUE_OBJ, .as.obj = (Obj *)vm.chunk};
 
       vm.frameBottom =
           (uint8_t)(vm.stackTop - vm.stack) - (uint8_t)(numActualParams);
-      vm.returnCount = (int)(vm.ip - vm.chunk->code);
+      vm.returnIp = vm.ip;
+      vm.chunk = func->chunk;
 
-      vm.ip = vm.chunk->code + func->startCount;
+      vm.ip = vm.chunk->code;
       break;
     }
     case OP_TABLE: {
