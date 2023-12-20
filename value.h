@@ -18,7 +18,7 @@ typedef struct {
   Obj obj;
   int length;
   char *string;
-  u_int32_t hash;
+  uint32_t hash;
 } ObjString;
 
 typedef struct Chunk Chunk;
