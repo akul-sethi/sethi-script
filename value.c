@@ -75,7 +75,7 @@ void printValue(Value val) {
       printf("%s", ((ObjString *)val.as.obj)->string);
       break;
     case OBJ_STRUCT:
-      printf("<%s>", ((ObjStruct *)val.as.obj)->type->string);
+      printf("`%s`", ((ObjStruct *)val.as.obj)->type->string);
       break;
     case OBJ_FUNCTION:
       printf("function: %d params", ((ObjFunc *)val.as.obj)->numParams);
